@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>聖誕訊號扭蛋機</title>
+  <!-- 引入外部资源 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  
+  <!-- 配置Tailwind -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            christmas: {
+              red: '#C70039',
+              green: '#2C5F2D',
+              gold: '#FFC300',
+              darkgreen: '#1A3A1C',
+              cream: '#FFF9E6'
+            }
+          },
+          fontFamily: {
+            christmas: ['"Mountains of Christmas"', 'cursive'],
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        },
+      }
+    }
+  </script>
+  
+  <!-- 引入Google字体 -->
+  <link href="https://fonts.googleapis.com/css2?family=Mountains+of+Christmas:wght@400;700&display=swap" rel="stylesheet">
+  
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .text-shadow {
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+      }
+      .text-shadow-lg {
+        text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.6);
+      }
+      .glow {
+        filter: drop-shadow(0 0 8px rgba(255, 195, 0, 0.8));
+      }
+      .glass {
+        background: rgba(255, 255, 255, 0.25);
+        backdrop-filter: blur(4px);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+      }
+      .egg-shadow {
+        box-shadow: inset -5px -5px 10px rgba(0,0,0,0.2), 
+                    inset 5px 5px 10px rgba(255,255,255,0.3);
+      }
+      .machine-shadow {
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3),
+                    inset 0 -5px 10px rgba(0, 0, 0, 0.2);
+      }
+    }
+    
+    /* 雪花动画 */
+    .snowflake {
+      position: absolute;
+      background-color: rgba(255, 255, 255, 0.8);
+      border-radius: 50%;
+      pointer-events: none;
+      animation: snowfall linear infinite;
+    }
+    
+    .snowflake.flake-type-1 {
+      border: 1px solid rgba(255, 255, 255, 0.6);
+    }
+    
+    .snowflake.flake-type-2 {
+      background-color: rgba(255, 255, 255, 0.6);
+    }
+    
+    @keyframes snowfall {
+      0% {
+        transform: translateY(-10px) rotate(0deg);
+        opacity: 0;
+      }
+      10% {
+        opacity: 1;
+      }
+      90% {
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(100vh) rotate(360deg);
+        opacity: 0;
+      }
+    }
+    
+    /* 扭蛋动画 */
+    @keyframes shake-machine {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-5px); }
+      40% { transform: translateX(5px); }
+      60% { transform: translateX(-5px); }
+      80% { transform: translateX(5px); }
+    }
+    
+    @keyframes egg-drop {
+      0% { transform: translateY(-150px) scale(0.8); opacity: 0; }
+      60% { transform: translateY(20px) scale(1.05); opacity: 1; }
+      80% { transform: translateY(-10px) scale(0.95); }
+      100% { transform: translateY(0) scale(1); opacity: 1; }
+    }
+    
+    @keyframes lever-pull {
+      0% { transform: rotate(0deg); }
+      50% { transform: rotate(-30deg) translateY(8px); }
+      100% { transform: rotate(0deg); }
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    
+    .machine-shake {
+      animation: shake-machine 0.8s ease-in-out;
+    }
+    
+    .egg-drop-animation {
+      animation: egg-drop 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+    
+    .lever-animate {
+      animation: lever-pull 1.2s ease-in-out forwards;
+    }
+    
+    .floating {
+      animation: float 3s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-christmas-darkgreen overflow-x-hidden relative">
+  <!-- 背景装饰 -->
+  <div class="fixed inset-0 z-0">
+    <!-- 圣诞背景图 -->
+    <div class="absolute inset-0 bg-[url('https://picsum.photos/id/1059/1920/1080')] bg-cover bg-center opacity-30"></div>
+    
+    <!-- 雪花容器 -->
+    <div id="snow-container" class="absolute inset-0 pointer-events-none"></div>
+    
+    <!-- 装饰性光斑 -->
+    <div class="absolute top-1/4 left-1/5 w-64 h-64 bg-christmas-gold/20 rounded-full blur-3xl"></div>
+    <div class="absolute bottom-1/4 right-1/5 w-80 h-80 bg-christmas-red/10 rounded-full blur-3xl"></div>
+  </div>
+  
+  <!-- 顶部装饰条 -->
+  <div class="absolute top-0 left-0 right-0 h-16 bg-christmas-red/90 flex items-center justify-center gap-6 z-10 border-b-4 border-christmas-gold/70">
+    <i class="fa fa-snowflake-o text-christmas-gold text-2xl floating"></i>
+    <i class="fa fa-gift text-christmas-cream text-2xl floating" style="animation-delay: 0.3s"></i>
+    <i class="fa fa-tree text-christmas-gold text-2xl floating" style="animation-delay: 0.6s"></i>
+    <i class="fa fa-star text-christmas-cream text-2xl floating" style="animation-delay: 0.9s"></i>
+    <i class="fa fa-bell text-christmas-gold text-2xl floating" style="animation-delay: 0.1s"></i>
+  </div>
+  
+  <!-- 标题区域 -->
+  <header class="pt-24 pb-8 px-4 text-center relative z-20">
+    <h1 class="font-christmas text-[clamp(2.5rem,10vw,5rem)] text-christmas-gold font-bold text-shadow-lg">
+      猜猜我想對妳說?
+    </h1>
+    <p class="text-christmas-cream text-[clamp(1rem,4vw,1.25rem)] mt-2 max-w-md mx-auto bg-christmas-darkgreen/50 py-2 px-4 rounded-lg">
+      轉動把手，獲取專屬於妳的訊息
+    </p>
+  </header>
+  
+  <!-- 主内容区 -->
+  <main class="relative z-20 flex flex-col items-center justify-center px-4 pb-20">
+    <!-- 扭蛋机容器 -->
+    <div class="w-full max-w-md aspect-[3/4] relative">
+      <!-- 扭蛋机主体 -->
+      <div id="machine" class="w-full h-full relative machine-shadow">
+        <!-- 扭蛋机外壳 -->
+        <div class="absolute inset-0 bg-christmas-red rounded-2xl border-8 border-christmas-gold/80 overflow-hidden">
+          <!-- 顶部圣诞帽 -->
+          <div class="absolute top-[-5rem] left-1/2 transform -translate-x-1/2 w-[70%] h-16 bg-christmas-red rounded-t-3xl border-4 border-christmas-gold/80 z-10">
+            <div class="absolute -bottom-5 right-6 w-8 h-8 bg-christmas-cream rounded-full border-2 border-christmas-gold/80 shadow-md"></div>
+          </div>
+          
+          <!-- 冬青装饰 -->
+          <div class="absolute top-[-1.8rem] left-1/2 transform -translate-x-1/2 flex items-center gap-2 z-20">
+            <div class="w-4 h-4 bg-red-600 rounded-full shadow-md"></div>
+            <div class="w-14 h-8 text-christmas-green">
+              <i class="fa fa-leaf text-2xl"></i>
+            </div>
+            <div class="w-4 h-4 bg-red-600 rounded-full shadow-md"></div>
+            <div class="w-14 h-8 text-christmas-green">
+              <i class="fa fa-leaf text-2xl"></i>
+            </div>
+            <div class="w-4 h-4 bg-red-600 rounded-full shadow-md"></div>
+          </div>
+          
+          <!-- 玻璃窗口装饰边 -->
+          <div class="absolute top-[12%] left-1/2 transform -translate-x-1/2 w-[85%] h-[43%] bg-christmas-gold/90 rounded-xl flex items-center justify-center">
+            <!-- 玻璃窗口 -->
+            <div class="w-[95%] h-[92%] bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 overflow-hidden relative">
+              <!-- 扭蛋区域背景 -->
+              <div class="absolute inset-0 bg-christmas-green/20">
+                <!-- 扭蛋们 -->
+                <div class="absolute inset-0 p-3 flex flex-wrap items-center justify-center gap-2">
+                  <div class="w-10 h-10 bg-red-500 rounded-full egg-shadow floating" style="animation-delay: 0s"></div>
+                  <div class="w-10 h-10 bg-green-500 rounded-full egg-shadow floating" style="animation-delay: 0.2s"></div>
+                  <div class="w-10 h-10 bg-blue-500 rounded-full egg-shadow floating" style="animation-delay: 0.4s"></div>
+                  <div class="w-10 h-10 bg-yellow-500 rounded-full egg-shadow floating" style="animation-delay: 0.6s"></div>
+                  <div class="w-10 h-10 bg-purple-500 rounded-full egg-shadow floating" style="animation-delay: 0.8s"></div>
+                  <div class="w-10 h-10 bg-pink-500 rounded-full egg-shadow floating" style="animation-delay: 0.1s"></div>
+                  <div class="w-10 h-10 bg-orange-500 rounded-full egg-shadow floating" style="animation-delay: 0.3s"></div>
+                  <div class="w-10 h-10 bg-teal-500 rounded-full egg-shadow floating" style="animation-delay: 0.5s"></div>
+                  <div class="w-10 h-10 bg-indigo-500 rounded-full egg-shadow floating" style="animation-delay: 0.7s"></div>
+                  <div class="w-10 h-10 bg-red-400 rounded-full egg-shadow floating" style="animation-delay: 0.9s"></div>
+                  <div class="w-10 h-10 bg-green-400 rounded-full egg-shadow floating" style="animation-delay: 0.2s"></div>
+                  <div class="w-10 h-10 bg-blue-400 rounded-full egg-shadow floating" style="animation-delay: 0.4s"></div>
+                </div>
+                
+                <!-- 窗口内的雪花装饰 -->
+                <div class="absolute top-2 left-2 w-3 h-3 bg-white rounded-full"></div>
+                <div class="absolute top-4 right-4 w-2 h-2 bg-white rounded-full"></div>
+                <div class="absolute bottom-3 left-10 w-2 h-2 bg-white rounded-full"></div>
+              </div>
+              
+              <!-- 选中的扭蛋 -->
+              <div id="selected-egg" class="w-16 h-16 bg-christmas-gold rounded-full absolute z-10 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 egg-shadow cursor-pointer">
+                <div class="absolute inset-0 flex items-center justify-center">
+                  <i class="fa fa-gift text-christmas-red text-xl"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 中间装饰条 -->
+          <div class="absolute top-[55%] left-0 right-0 h-8 bg-christmas-gold/80 border-y-2 border-christmas-gold/50"></div>
+          
+          <!-- 底部控制面板 -->
+          <div class="absolute top-[60%] left-0 right-0 h-[35%] p-4">
+            <!-- 投币口 -->
+            <div class="absolute top-6 left-1/4 w-12 h-8 bg-gray-700 rounded border-2 border-gray-600 flex items-center justify-center shadow-inner">
+              <div class="w-7 h-1.5 bg-gray-500"></div>
+            </div>
+            
+            <!-- 旋钮 -->
+            <div class="absolute top-8 left-1/2 transform -translate-x-1/2 w-16 h-16 bg-christmas-gold rounded-full border-4 border-christmas-gold/60 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform shadow-md">
+              <div class="w-6 h-6 bg-christmas-red rounded-full"></div>
+              <div class="absolute w-1 h-10 bg-christmas-red/70 -rotate-45"></div>
+            </div>
+            
+            <!-- 摇杆 -->
+            <div id="lever" class="absolute top-8 right-1/4 w-6 h-20 transition-all duration-300 origin-top">
+              <div class="w-full h-14 bg-gray-700 rounded-t-full border-2 border-gray-600"></div>
+              <div class="w-10 h-10 bg-christmas-gold rounded-full border-4 border-christmas-gold/60 -ml-2 shadow-md"></div>
+            </div>
+            
+            <!-- 出蛋口 -->
+            <div class="absolute bottom-6 left-1/2 transform -translate-x-1/2 w-24 h-14 bg-gray-700 rounded-lg border-4 border-gray-600 flex items-end justify-center shadow-inner">
+              <div class="w-20 h-3 bg-gray-600 rounded-t-full"></div>
+            </div>
+            
+            <!-- 星星装饰 -->
+            <div class="absolute top-4 left-6 text-christmas-gold text-shadow">
+              <i class="fa fa-star text-xl"></i>
+            </div>
+            <div class="absolute top-10 left-10 text-christmas-gold text-shadow">
+              <i class="fa fa-star text-lg"></i>
+            </div>
+            <div class="absolute top-16 left-8 text-christmas-gold text-shadow">
+              <i class="fa fa-star text-base"></i>
+            </div>
+            <div class="absolute top-4 right-6 text-christmas-gold text-shadow">
+              <i class="fa fa-star text-base"></i>
+            </div>
+            <div class="absolute top-12 right-10 text-christmas-gold text-shadow">
+              <i class="fa fa-star text-lg"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 掉落的扭蛋 (初始隐藏) -->
+      <div id="dropped-egg" class="absolute bottom-[12%] left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-full egg-shadow opacity-0 z-20">
+        <div class="absolute inset-0 flex items-center justify-center">
+          <i class="fa fa-gift text-xl"></i>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 祝福显示区域 -->
+    <div id="message-container" class="mt-10 w-full max-w-md bg-christmas-cream/90 rounded-xl p-6 shadow-xl border-4 border-christmas-gold/80 hidden">
+      <h2 class="font-christmas text-2xl text-christmas-red text-center mb-4">專屬於妳的訊息</h2>
+      <div id="message" class="text-center text-christmas-darkgreen text-lg min-h-[100px] flex items-center justify-center px-2">
+        <!-- 祝福内容将在这里显示 -->
+      </div>
+      <div class="mt-6 text-center">
+        <button id="another-btn" class="bg-christmas-red hover:bg-christmas-red/80 text-white font-bold py-3 px-8 rounded-full transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-1">
+          再扭一次
+        </button>
+      </div>
+    </div>
+    
+    <!-- 初始提示 -->
+    <div id="initial-message" class="mt-10 w-full max-w-md bg-christmas-cream/90 rounded-xl p-6 shadow-xl border-4 border-christmas-gold/80 text-center">
+      <p class="text-christmas-darkgreen text-lg">轉一下右邊搖桿，獲取專屬訊息！</p>
+      <i class="fa fa-hand-o-right text-christmas-red text-2xl mt-4 animate-bounce"></i>
+    </div>
+  </main>
+  
+  <!-- 页脚 -->
+  <footer class="relative z-20 bg-christmas-red/90 text-christmas-cream py-4 text-center border-t-4 border-christmas-gold/70">
+    <p class="font-christmas text-xl">平安喜樂 &copy; 2025</p>
+  </footer>
+
+  <script>
+    // 祝福和爱意表达的话语
+    const messages = [
+      "雲想衣裳花想容，春風拂門檻露華濃。",
+      "山河遠闊，人間星河，無一是你，無一不是你。",
+      "幸得識卿桃花面，從此阡陌多暖春。",
+      "今朝有酒今朝醉，明日愁來明日愁。",
+      "桃李春風一杯酒，江湖夜雨十年燈。",
+      "人有生老三千疾，唯有思君不可醫。",
+      "白茶清歡無別事，我在等風也等你。",
+      "錦衣雪華玉顏色，回眸一笑天下傾。",
+      "為你明燈三千，為你花開滿城。",
+      "朝暮不依長相思，白首不離長相守。",
+      "靜待一樹花開，盼你葉落歸來。",
+      "富貴可離，權柄可逆，獨獨你不可棄。",
+      "山有木兮木有枝，心悅君兮君不知。",
+      "初見乍歡，久處仍怦然。",
+      "長相思兮長相憶，短相思兮。",
+      "日月與卿，日為朝，月為暮，卿為朝暮。",
+      "日日思君不見君，共飲長江水。",
+      "愛是街燈下相等，你是花開花是你。",
+      "你如酒，醉我年華。",
+      "山有扶蘇，隰有荷華。。"
+    ];
+    
+    // 扭蛋颜色
+    const eggColors = [
+      'bg-red-500 text-white',
+      'bg-green-500 text-yellow-300',
+      'bg-blue-500 text-white',
+      'bg-yellow-500 text-red-600',
+      'bg-purple-500 text-yellow-300',
+      'bg-pink-500 text-purple-800',
+      'bg-orange-500 text-white',
+      'bg-teal-500 text-purple-800'
+    ];
+    
+    // DOM元素
+    const lever = document.getElementById('lever');
+    const machine = document.getElementById('machine');
+    const selectedEgg = document.getElementById('selected-egg');
+    const droppedEgg = document.getElementById('dropped-egg');
+    const messageContainer = document.getElementById('message-container');
+    const messageElement = document.getElementById('message');
+    const anotherBtn = document.getElementById('another-btn');
+    const initialMessage = document.getElementById('initial-message');
+    
+    // 生成雪花效果
+    function createSnowflakes() {
+      const container = document.getElementById('snow-container');
+      const count = 80;
+      
+      // 清除现有雪花
+      container.innerHTML = '';
+      
+      for (let i = 0; i < count; i++) {
+        const snowflake = document.createElement('div');
+        snowflake.classList.add('snowflake');
+        
+        // 随机雪花类型
+        const flakeType = Math.random() > 0.5 ? 'flake-type-1' : 'flake-type-2';
+        snowflake.classList.add(flakeType);
+        
+        // 随机大小
+        const size = Math.random() * 6 + 1;
+        snowflake.style.width = `${size}px`;
+        snowflake.style.height = `${size}px`;
+        
+        // 随机位置
+        snowflake.style.left = `${Math.random() * 100}%`;
+        snowflake.style.top = `-${size}px`;
+        
+        // 随机动画时长
+        const duration = Math.random() * 15 + 5;
+        snowflake.style.animationDuration = `${duration}s`;
+        
+        // 随机动画延迟
+        snowflake.style.animationDelay = `${Math.random() * 10}s`;
+        
+        // 随机水平移动
+        const drift = Math.random() * 100 - 50;
+        snowflake.style.transform = `translateX(${drift}px)`;
+        
+        container.appendChild(snowflake);
+      }
+    }
+    
+    // 重置扭蛋机状态
+    function resetMachine() {
+      // 隐藏消息容器，显示初始提示
+      messageContainer.classList.add('hidden');
+      initialMessage.classList.remove('hidden');
+      
+      // 重置扭蛋位置和状态
+      selectedEgg.style.display = 'block';
+      droppedEgg.style.opacity = '0';
+      droppedEgg.style.animation = 'none';
+    }
+    
+    // 扭蛋功能
+    function startGacha() {
+      // 防止重复点击
+      lever.style.pointerEvents = 'none';
+      
+      // 隐藏初始提示
+      initialMessage.classList.add('hidden');
+      
+      // 摇杆动画
+      lever.classList.add('lever-animate');
+      
+      // 机器震动
+      machine.classList.add('machine-shake');
+      
+      // 一段时间后执行扭蛋掉落
+      setTimeout(() => {
+        // 隐藏选中的扭蛋
+        selectedEgg.style.display = 'none';
+        
+        // 随机选择扭蛋颜色
+        const randomColor = eggColors[Math.floor(Math.random() * eggColors.length)];
+        droppedEgg.className = `absolute bottom-[12%] left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-full egg-shadow z-20 ${randomColor}`;
+        
+        // 掉落动画
+        droppedEgg.style.animation = 'none';
+        void droppedEgg.offsetWidth; // 触发重绘
+        droppedEgg.style.animation = 'egg-drop 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards';
+        
+        // 显示祝福
+        setTimeout(() => {
+          const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+          messageElement.textContent = randomMessage;
+          messageContainer.classList.remove('hidden');
+          
+          // 恢复交互
+          lever.style.pointerEvents = 'auto';
+        }, 1200);
+        
+      }, 1000);
+      
+      // 移除动画类以便下次使用
+      setTimeout(() => {
+        lever.classList.remove('lever-animate');
+        machine.classList.remove('machine-shake');
+      }, 1500);
+    }
+    
+    // 事件监听
+    lever.addEventListener('click', startGacha);
+    anotherBtn.addEventListener('click', resetMachine);
+    
+    // 页面加载完成后初始化
+    window.addEventListener('load', () => {
+      createSnowflakes();
+      
+      // 定时更新雪花
+      setInterval(createSnowflakes, 20000);
+    });
+  </script>
+</body>
+</html>
