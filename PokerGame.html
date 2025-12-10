@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>撲克牌比大小 升級版</title>
+    <style>
+        /* CSS 樣式區塊 */
+        :root {
+            --card-back-color: #333;
+            --card-border-color: #f0f0f0;
+            --text-color: #222;
+            --bg-color: #e0f7fa; /* 淺藍色背景 */
+            --table-color: #00796b; /* 綠色桌面 */
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 800px;
+            padding: 20px;
+            background-color: var(--table-color);
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            flex-grow: 1;
+        }
+
+        h1 {
+            color: #fff;
+            margin-bottom: 10px;
+        }
+
+        /* 資訊面板和統計區 */
+        .info-panel {
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+
+        .stats-panel {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 15px;
+            color: #fff;
+            font-size: 1.1em;
+        }
+        
+        /* 扇形展開牌區 */
+        .deck {
+            position: relative;
+            height: 150px; /* 牌堆高度 */
+            margin: 40px 0;
+        }
+
+        /* 撲克牌基本樣式 */
+        .card {
+            width: 70px; /* 略為縮小，容納更多牌 */
+            height: 100px;
+            background-color: var(--card-back-color);
+            border: 2px solid var(--card-border-color);
+            border-radius: 6px;
+            position: absolute;
+            top: 0;
+            left: 50%;
+            margin-left: -35px; /* 居中 */
+            box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.4);
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2em;
+            font-weight: bold;
+            color: var(--card-border-color); /* 蓋牌時文字顏色 */
+            user-select: none;
+        }
+
+        /* 牌面數字與花色樣式 */
+        .card.revealed {
+            background-color: white;
+            color: var(--text-color);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+            flex-direction: column;
+            justify-content: flex-start; /* 點數集中在上方 */
+            align-items: flex-start;
+            padding: 5px;
+            text-align: left;
+        }
+
+        /* 牌面核心樣式，讓點數和花色集中在左上角 */
+        .card-content {
+            display: flex;
+            flex-direction: column;
+            line-height: 1;
+        }
+        
+        .card .value { font-size: 1.3em; font-weight: bold; }
+        .card .suit { font-size: 1.1em; margin-top: 2px; }
+        
+        /* 紅色花色 */
+        .card.red .value, .card.red .suit { 
+            color: #cc0000; 
+        } 
+
+        /* 選中效果 */
+        .card:hover {
+            box-shadow: 0 0 15px 5px rgba(255, 255, 0, 0.7);
+        }
+
+        .card.selected {
+            transform: translateY(-20px) !important;
+            border: 3px solid gold;
+        }
+        
+        /* 選牌區的牌不可點擊 */
+        .deck .card.disabled {
+            cursor: default;
+            box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.4);
+        }
+        
+        /* 蓋牌時的問號 */
+        .card:not(.revealed)::after {
+            content: '?';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2em;
+            color: var(--card-border-color);
+        }
+
+        /* 結果牌區 */
+        .result-area {
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-start;
+            margin-top: 20px;
+            min-height: 140px; 
+        }
+
+        .result-card-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 120px;
+        }
+
+        .result-card-box p {
+            color: #fff;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .result-card-box .card {
+            position: static;
+            margin-left: 0;
+            transform: none !important;
+        }
+
+        /* 按鈕樣式 (置中) */
+        .button-area {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        button {
+            padding: 10px 25px;
+            font-size: 1.2em;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #ff9800; /* 橘色 */
+            color: white;
+            box-shadow: 0 4px #e65100;
+            transition: background-color 0.1s, box-shadow 0.1s;
+        }
+
+        button:active {
+            background-color: #e65100;
+            box-shadow: 0 2px #e65100;
+            transform: translateY(2px);
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            box-shadow: none;
+            cursor: default;
+        }
+
+        /* 響應式調整 */
+        @media (max-width: 600px) {
+            .card {
+                width: 50px;
+                height: 75px;
+                margin-left: -25px;
+            }
+            .deck {
+                height: 100px;
+            }
+            .result-card-box {
+                width: 80px;
+            }
+            button {
+                font-size: 1em;
+                padding: 8px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>♥️ 撲克牌比大小 ♦️</h1>
+        
+        <div id="stats" class="stats-panel">
+            <span>玩家勝場: <strong id="playerWins">0</strong></span>
+            <span>對手勝場: <strong id="computerWins">0</strong></span>
+        </div>
+
+        <div id="status" class="info-panel">
+            請從下方的牌堆中選擇一張牌。
+        </div>
+
+        <div id="cardDeck" class="deck">
+            </div>
+        
+        <div class="result-area">
+            <div class="result-card-box">
+                <p>玩家</p>
+                <div id="playerCard" class="card"></div> 
+            </div>
+            <div class="result-card-box">
+                <p>對手 (電腦)</p>
+                <div id="computerCard" class="card"></div>
+            </div>
+        </div>
+
+        <div class="button-area">
+            <button id="restartButton" style="display: none;">重新開始</button>
+        </div>
+        
+    </div>
+
+    <script>
+        // JavaScript 邏輯區塊
+        const SUITS = ['♠', '♥', '♦', '♣'];
+        const VALUES = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+        const VALUE_MAP = {
+            '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10,
+            'J': 11, 'Q': 12, 'K': 13, 'A': 14 // A 為最大
+        };
+        const TOTAL_CARDS_TO_USE = 26; // 增加可選的牌數
+
+        let deck = []; 
+        let availableCards = []; 
+        let playerSelection = null; 
+        let isSelecting = true;
+        
+        // 新增統計變數
+        let playerWins = 0;
+        let computerWins = 0;
+        
+        const cardDeckEl = document.getElementById('cardDeck');
+        const playerCardEl = document.getElementById('playerCard');
+        const computerCardEl = document.getElementById('computerCard');
+        const statusEl = document.getElementById('status');
+        const restartButton = document.getElementById('restartButton');
+        const playerWinsEl = document.getElementById('playerWins');
+        const computerWinsEl = document.getElementById('computerWins');
+
+
+        /**
+         * 產生一副完整的撲克牌
+         */
+        function createDeck() {
+            const newDeck = [];
+            for (const suit of SUITS) {
+                for (const value of VALUES) {
+                    newDeck.push({ 
+                        suit, 
+                        value, 
+                        rank: VALUE_MAP[value], 
+                        isRed: (suit === '♥' || suit === '♦') 
+                    });
+                }
+            }
+            return newDeck;
+        }
+
+        /**
+         * 洗牌 (Fisher-Yates 演算法)
+         */
+        function shuffleDeck(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+        
+        /**
+         * 更新勝敗統計顯示
+         */
+        function updateStatsDisplay() {
+            playerWinsEl.textContent = playerWins;
+            computerWinsEl.textContent = computerWins;
+        }
+
+        /**
+         * 初始化遊戲 (一局開始)
+         */
+        function initGame() {
+            deck = createDeck();
+            shuffleDeck(deck);
+            
+            // 根據設定的數量取牌
+            availableCards = deck.slice(0, TOTAL_CARDS_TO_USE); 
+            
+            playerSelection = null;
+            isSelecting = true;
+            statusEl.textContent = "請從下方的牌堆中選擇一張牌。";
+            restartButton.style.display = 'none';
+
+            // 清空結果區並重設為蓋牌狀態
+            playerCardEl.className = 'card';
+            computerCardEl.className = 'card';
+            playerCardEl.innerHTML = '';
+            computerCardEl.innerHTML = '';
+            playerCardEl.style.border = '2px solid var(--card-border-color)';
+            computerCardEl.style.border = '2px solid var(--card-border-color)';
+            
+            updateStatsDisplay();
+            renderDeck();
+        }
+
+        /**
+         * 渲染牌堆 (扇形展開)
+         */
+        function renderDeck() {
+            cardDeckEl.innerHTML = '';
+            const totalCards = availableCards.length;
+            const maxAngle = 60; // 展開的最大角度
+            const startAngle = -maxAngle / 2; 
+            const angleStep = maxAngle / (totalCards - 1); 
+            
+            availableCards.forEach((card, index) => {
+                const cardEl = document.createElement('div');
+                cardEl.className = 'card';
+                cardEl.dataset.index = index;
+                
+                // 蓋牌時，顯示牌背
+                cardEl.innerHTML = ''; 
+
+                // 扇形展開的樣式
+                const angle = startAngle + index * angleStep;
+                // 調整 transform-origin 讓牌繞著底邊中心旋轉
+                cardEl.style.transform = `rotate(${angle}deg) translate(0, 0)`; 
+                cardEl.style.transformOrigin = '50% 120px'; 
+
+                cardEl.addEventListener('click', () => {
+                    if (isSelecting) {
+                        handleCardSelect(index);
+                    }
+                });
+
+                cardDeckEl.appendChild(cardEl);
+            });
+        }
+        
+        /**
+         * 處理玩家選牌
+         */
+        function handleCardSelect(index) {
+            if (!isSelecting) return;
+            
+            document.querySelectorAll('.deck .card').forEach(el => el.classList.remove('selected'));
+            
+            const selectedCardEl = cardDeckEl.querySelector(`[data-index="${index}"]`);
+            selectedCardEl.classList.add('selected');
+
+            playerSelection = index;
+            statusEl.textContent = "您已選好牌。準備揭曉結果！";
+            isSelecting = false; 
+
+            // 讓電腦選牌並進行比大小
+            setTimeout(compareCards, 1000); 
+        }
+
+        /**
+         * 電腦選牌並比大小
+         */
+        function compareCards() {
+            statusEl.textContent = "電腦 (對手) 正在選牌...";
+            
+            // 1. 電腦選牌：排除玩家選的牌
+            let computerSelectionIndex;
+            do {
+                computerSelectionIndex = Math.floor(Math.random() * availableCards.length);
+            } while (computerSelectionIndex === playerSelection);
+
+            const playerCard = availableCards[playerSelection];
+            const computerCard = availableCards[computerSelectionIndex];
+
+            // 2. 移除牌堆中的兩張牌並加上 'disabled' 樣式
+            cardDeckEl.querySelectorAll('.card').forEach((el, index) => {
+                el.classList.add('disabled');
+                if (index === playerSelection || index === computerSelectionIndex) {
+                    el.style.opacity = '0.2'; 
+                    el.classList.remove('selected');
+                }
+            });
+
+            // 3. 顯示結果牌
+            setTimeout(() => {
+                revealCard(playerCardEl, playerCard);
+                revealCard(computerCardEl, computerCard);
+                
+                // 4. 判斷勝負
+                setTimeout(() => {
+                    const resultText = determineWinner(playerCard, computerCard);
+                    statusEl.innerHTML = `比牌結果：**${resultText}**`;
+                    restartButton.style.display = 'block';
+                }, 1000); 
+            }, 1000); 
+        }
+        
+        /**
+         * 將牌的資訊渲染到元素上 (揭牌)
+         */
+        function revealCard(el, card) {
+            el.className = 'card revealed';
+            el.classList.remove('red'); // 清除舊的紅色
+            if (card.isRed) {
+                el.classList.add('red');
+            }
+            // 牌面只集中在左上角
+            el.innerHTML = `
+                <div class="card-content">
+                    <div class="value">${card.value}</div>
+                    <div class="suit">${card.suit}</div>
+                </div>
+            `;
+        }
+        
+        /**
+         * 判斷勝負並更新統計
+         */
+        function determineWinner(playerCard, computerCard) {
+            let resultText;
+            
+            if (playerCard.rank > computerCard.rank) {
+                // 玩家勝利
+                playerWins++;
+                playerCardEl.style.border = '3px solid gold';
+                computerCardEl.style.border = '3px solid black';
+                resultText = "🎉 玩家獲勝！";
+            } else if (playerCard.rank < computerCard.rank) {
+                // 對手勝利
+                computerWins++;
+                playerCardEl.style.border = '3px solid black';
+                computerCardEl.style.border = '3px solid gold';
+                resultText = "😭 對手獲勝！";
+            } else {
+                // 平手
+                playerCardEl.style.border = '3px solid gray';
+                computerCardEl.style.border = '3px solid gray';
+                resultText = "🤝 平手！";
+            }
+            
+            updateStatsDisplay(); // 更新統計數據
+            return resultText;
+        }
+        
+        // 綁定重新開始按鈕事件
+        restartButton.addEventListener('click', initGame);
+
+        // 遊戲啟動
+        initGame();
+    </script>
+</body>
+</html>
