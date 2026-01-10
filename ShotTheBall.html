@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>3D Balloon Shooter - Hard Mode</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #87CEEB; /* 天空藍底色 */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* 遊戲畫布 */
+        #game-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* UI 層 */
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none; /* 讓點擊穿透到下層 */
+        }
+
+        /* 準心 (Crosshair) */
+        #crosshair {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            left: 50%;
+            top: 50%;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            transition: transform 0.05s ease-out;
+        }
+        #crosshair::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 4px;
+            height: 4px;
+            background: red;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+        }
+
+        /* 分數與時間 */
+        .hud-panel {
+            position: absolute;
+            top: 20px;
+            display: flex;
+            width: 100%;
+            justify-content: space-between;
+            padding: 0 30px;
+            box-sizing: border-box;
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        /* 遊戲選單 (開始/結束) */
+        #menu-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            pointer-events: auto;
+            text-align: center;
+        }
+
+        h1 { margin-bottom: 10px; font-size: 40px; text-shadow: 0 0 10px #ff00de; }
+        p { font-size: 18px; max-width: 80%; color: #ddd; line-height: 1.6; }
+        
+        .legend {
+            margin-top: 10px;
+            font-size: 16px;
+            background: rgba(255,255,255,0.1);
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        button {
+            margin-top: 30px;
+            padding: 15px 40px;
+            font-size: 24px;
+            background: linear-gradient(45deg, #ff0055, #ffcc00);
+            border: none;
+            color: white;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(255, 0, 85, 0.4);
+            transition: transform 0.2s;
+        }
+        button:active { transform: scale(0.95); }
+
+        /* 射擊閃光效果 */
+        #flash {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 15;
+            transition: opacity 0.1s;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container"></div>
+
+    <div id="flash"></div>
+
+    <div id="ui-layer">
+        <div class="hud-panel">
+            <div id="score-display">Score: 0</div>
+            <div id="time-display">Time: 30</div>
+        </div>
+        <div id="crosshair"></div>
+    </div>
+
+    <div id="menu-overlay">
+        <h1 id="menu-title">SKY SHOOTER</h1>
+        <p>拖動準心瞄準，點擊任意處射擊！</p>
+        
+        <div class="legend">
+            <span style="color:#2ecc71">● 普通 (+10)</span> &nbsp;
+            <span style="color:#FFD700">● 金色 (+50)</span><br>
+            <span style="color:#999">● 黑色 (-30)</span> &nbsp;
+            <span style="color:#d580ff">● 紫色 (-15)</span>
+        </div>
+
+        <p id="final-score" style="display:none; font-size: 30px; color: #ffcc00; margin: 20px 0;">最終分數: 0</p>
+        <button id="start-btn">開始遊戲</button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
+        // --- 遊戲變數設定 ---
+        let scene, camera, renderer;
+        let balloons = [];
+        let score = 0;
+        let timeLeft = 30;
+        let gameActive = false;
+        let lastTime = 0;
+        let spawnRate = 800; // 毫秒
+        let lastSpawn = 0;
+        
+        // 準心位置 (正規化座標 -1 到 1)
+        const mouse = new THREE.Vector2();
+        // 螢幕像素座標 (用於移動 UI 準心)
+        const screenPos = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+        
+        const raycaster = new THREE.Raycaster();
+        
+        // DOM 元素
+        const scoreEl = document.getElementById('score-display');
+        const timeEl = document.getElementById('time-display');
+        const menuEl = document.getElementById('menu-overlay');
+        const startBtn = document.getElementById('start-btn');
+        const crosshairEl = document.getElementById('crosshair');
+        const menuTitle = document.getElementById('menu-title');
+        const finalScoreEl = document.getElementById('final-score');
+        const flashEl = document.getElementById('flash');
+
+        // --- 初始化 Three.js 場景 ---
+        function init() {
+            // 1. 場景
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x87CEEB); // 天空藍
+            scene.fog = new THREE.Fog(0x87CEEB, 10, 50); // 霧氣增加深遠感
+
+            // 2. 相機
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+            camera.position.set(0, 0, 10); // 玩家位置
+
+            // 3. 渲染器
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true; // 開啟陰影
+            document.getElementById('game-container').appendChild(renderer.domElement);
+
+            // 4. 燈光 (營造 C4D 質感)
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight.position.set(10, 20, 10);
+            dirLight.castShadow = true;
+            scene.add(dirLight);
+
+            // 環境光貼圖反射 (簡單模擬)
+            const hemiLight = new THREE.HemisphereLight(0xffffbb, 0x080820, 0.5);
+            scene.add(hemiLight);
+
+            // 監聽視窗大小改變
+            window.addEventListener('resize', onWindowResize, false);
+
+            // 監聽輸入 (滑鼠 & 觸控)
+            document.addEventListener('mousemove', onPointerMove);
+            document.addEventListener('touchmove', onTouchMove, { passive: false });
+            
+            // 射擊事件
+            document.addEventListener('mousedown', onShoot);
+            // 手機上觸摸結束視為射擊
+            document.addEventListener('touchstart', onShoot); 
+
+            startBtn.addEventListener('click', startGame);
+        }
+
+        // --- 輸入處理 ---
+        function updateCrosshairPosition(x, y) {
+            screenPos.x = x;
+            screenPos.y = y;
+
+            // 更新 UI 準心位置
+            crosshairEl.style.left = `${x}px`;
+            crosshairEl.style.top = `${y}px`;
+
+            // 轉換為 Three.js 的正規化座標 (-1 到 +1)
+            mouse.x = (x / window.innerWidth) * 2 - 1;
+            mouse.y = -(y / window.innerHeight) * 2 + 1;
+        }
+
+        function onPointerMove(event) {
+            if (!gameActive) return;
+            updateCrosshairPosition(event.clientX, event.clientY);
+        }
+
+        function onTouchMove(event) {
+            if (!gameActive) return;
+            event.preventDefault(); // 防止滾動
+            const touch = event.touches[0];
+            // 手機上準心往手指上方偏移一點，避免被手指擋住
+            updateCrosshairPosition(touch.clientX, touch.clientY - 50);
+        }
+
+        // --- 射擊邏輯 ---
+        function onShoot(event) {
+            if (!gameActive) return;
+
+            // 播放射擊音效
+            playSound('shoot');
+
+            // 視覺閃光
+            flashEl.style.opacity = 0.5;
+            setTimeout(() => { flashEl.style.opacity = 0; }, 50);
+
+            // 射線檢測
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(balloons);
+
+            if (intersects.length > 0) {
+                // 擊中第一個物體
+                const hitObject = intersects[0].object;
+                handleHit(hitObject);
+            }
+        }
+
+        function handleHit(balloon) {
+            // 讀取氣球數據
+            const data = balloon.userData;
+            score += data.points;
+            scoreEl.innerText = `Score: ${score}`;
+
+            // 播放音效
+            if (data.points > 0) playSound('hit');
+            else playSound('bad');
+
+            // 移除氣球
+            scene.remove(balloon);
+            balloons = balloons.filter(b => b !== balloon);
+        }
+
+        // --- 氣球生成工廠 (已更新：增加扣分球種類與數量) ---
+        function createBalloon() {
+            // 定義氣球類型
+            const types = [
+                // 好氣球 (加分)
+                { color: 0x2ecc71, points: 10, speed: 0.05, scale: 1 }, // 綠 (普通)
+                { color: 0x3498db, points: 10, speed: 0.06, scale: 1 }, // 藍 (普通)
+                { color: 0xff3333, points: 10, speed: 0.07, scale: 1 }, // 紅 (普通)
+                { color: 0xFFD700, points: 50, speed: 0.12, scale: 0.8 }, // 金 (獎勵)
+
+                // 壞氣球 (扣分)
+                { color: 0x111111, points: -30, speed: 0.04, scale: 1.2 }, // 黑 (炸彈：扣分重)
+                { color: 0x800080, points: -15, speed: 0.09, scale: 0.9 }  // 紫 (毒氣：扣分輕，但速度快)
+            ];
+
+            // --- 機率控制區 ---
+            // 0.0 ~ 0.1 (10%) : 金色 (獎勵)
+            // 0.1 ~ 0.2 (10%) : 黑色 (大炸彈)
+            // 0.2 ~ 0.4 (20%) : 紫色 (新陷阱 - 數量變多！)
+            // 0.4 ~ 1.0 (60%) : 普通三色球
+            
+            let rand = Math.random();
+            let type;
+
+            if (rand < 0.1) {
+                type = types[3]; // 金色
+            } else if (rand < 0.2) {
+                type = types[4]; // 黑色
+            } else if (rand < 0.4) {
+                type = types[5]; // 紫色 (新增的)
+            } else {
+                // 剩下的機率隨機分配給紅綠藍
+                type = types[Math.floor(Math.random() * 3)];
+            }
+
+            // 幾何與材質 (C4D 風格：高光澤)
+            const geometry = new THREE.SphereGeometry(0.5, 32, 32);
+            const material = new THREE.MeshPhysicalMaterial({
+                color: type.color,
+                metalness: 0.1,
+                roughness: 0.2,
+                clearcoat: 1.0, 
+                clearcoatRoughness: 0.1
+            });
+
+            const balloon = new THREE.Mesh(geometry, material);
+
+            // 隨機位置 (底部)
+            const startX = (Math.random() - 0.5) * 8;
+            const startZ = (Math.random() * -8) - 2; 
+            
+            balloon.position.set(startX, -6, startZ);
+            balloon.scale.set(type.scale, type.scale, type.scale);
+
+            // 儲存數據
+            balloon.userData = {
+                speed: type.speed + (Math.random() * 0.02), // 速度微擾
+                points: type.points,
+                wobbleSpeed: Math.random() * 2 + 1,
+                wobbleOffset: Math.random() * Math.PI * 2
+            };
+
+            scene.add(balloon);
+            balloons.push(balloon);
+        }
+
+        // --- 遊戲循環 ---
+        function animate(time) {
+            if (!gameActive) return;
+
+            requestAnimationFrame(animate);
+
+            const delta = time - lastTime;
+            
+            // 生成氣球
+            if (time - lastSpawn > spawnRate) {
+                createBalloon();
+                lastSpawn = time;
+                // 隨著時間減少生成間隔 (變難)
+                if (spawnRate > 300) spawnRate -= 5;
+            }
+
+            // 更新氣球位置
+            for (let i = balloons.length - 1; i >= 0; i--) {
+                let b = balloons[i];
+                // 向上飄
+                b.position.y += b.userData.speed;
+                
+                // 左右搖擺 (模擬空氣動力)
+                b.position.x += Math.sin(time * 0.003 * b.userData.wobbleSpeed + b.userData.wobbleOffset) * 0.02;
+
+                // 旋轉
+                b.rotation.y += 0.01;
+
+                // 超出邊界移除
+                if (b.position.y > 8) {
+                    scene.remove(b);
+                    balloons.splice(i, 1);
+                }
+            }
+
+            renderer.render(scene, camera);
+            lastTime = time;
+        }
+
+        // --- 遊戲控制 ---
+        function startGame() {
+            score = 0;
+            timeLeft = 30;
+            balloons.forEach(b => scene.remove(b));
+            balloons = [];
+            spawnRate = 800;
+
+            scoreEl.innerText = "Score: 0";
+            timeEl.innerText = "Time: 30";
+            menuEl.style.display = 'none';
+            gameActive = true;
+            
+            // 倒數計時器
+            const timerInterval = setInterval(() => {
+                if (!gameActive) {
+                    clearInterval(timerInterval);
+                    return;
+                }
+                timeLeft--;
+                timeEl.innerText = `Time: ${timeLeft}`;
+                
+                if (timeLeft <= 0) {
+                    endGame(timerInterval);
+                }
+            }, 1000);
+
+            lastTime = performance.now();
+            animate(lastTime);
+        }
+
+        function endGame(interval) {
+            clearInterval(interval);
+            gameActive = false;
+            menuTitle.innerText = "GAME OVER";
+            startBtn.innerText = "再玩一次";
+            finalScoreEl.style.display = 'block';
+            finalScoreEl.innerText = `最終分數: ${score}`;
+            menuEl.style.display = 'flex';
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // --- 簡單音效合成 (Web Audio API) ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            if (type === 'shoot') {
+                // 類似雷射/消音槍聲
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.1);
+                gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.1);
+            } else if (type === 'hit') {
+                // 清脆的高音
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
+                gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.1);
+            } else if (type === 'bad') {
+                // 低沈錯誤聲
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(50, audioCtx.currentTime + 0.3);
+                gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.3);
+            }
+        }
+
+        // 啟動
+        init();
+
+    </script>
+</body>
+</html>
