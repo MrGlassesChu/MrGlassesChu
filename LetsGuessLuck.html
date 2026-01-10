@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>馬上好運，猜福蛋</title>
+    <style>
+        :root {
+            --primary-red: #d93838;
+            --dark-red: #8f1f1f;
+            --gold: #ffcc00;
+            --bg-color: #fdf5e6;
+            --box-shadow: rgba(0,0,0,0.2);
+        }
+
+        body {
+            font-family: 'Microsoft JhengHei', 'PingFang TC', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(#ffdfba 15%, transparent 16%),
+                radial-gradient(#ffdfba 15%, transparent 16%);
+            background-size: 60px 60px;
+            background-position: 0 0, 30px 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        /* 標題區 */
+        header {
+            background: linear-gradient(to bottom, var(--primary-red), var(--dark-red));
+            width: 100%;
+            padding: 15px 0;
+            text-align: center;
+            box-shadow: 0 4px 10px var(--box-shadow);
+            border-bottom: 3px solid var(--gold);
+        }
+
+        h1 {
+            color: var(--gold);
+            margin: 0;
+            font-size: 1.8rem;
+            text-shadow: 2px 2px 0px #550000;
+        }
+
+        /* 遊戲主舞台 */
+        .stage {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            min-height: 300px;
+            position: relative;
+        }
+
+        /* 盲盒樣式 */
+        .blind-box {
+            width: 180px;
+            height: 180px;
+            background: radial-gradient(circle at 30% 30%, #ff5e5e, #c72c2c);
+            border-radius: 20px;
+            position: relative;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: transform 0.3s;
+            z-index: 10;
+        }
+
+        .blind-box::before {
+            content: "福";
+            font-size: 80px;
+            color: var(--gold);
+            font-weight: bold;
+            font-family: "KaiTi", serif;
+            border: 4px solid var(--gold);
+            padding: 10px;
+            border-radius: 5px;
+            background: rgba(143, 31, 31, 0.2);
+            transform: rotate(45deg);
+        }
+        
+        .blind-box::after {
+            /* 蓋子縫隙 */
+            content: "";
+            position: absolute;
+            top: 40px;
+            width: 100%;
+            height: 2px;
+            background: rgba(0,0,0,0.1);
+        }
+
+        /* 搖晃動畫 */
+        @keyframes shake {
+            0% { transform: rotate(0deg); }
+            25% { transform: rotate(5deg); }
+            50% { transform: rotate(0deg); }
+            75% { transform: rotate(-5deg); }
+            100% { transform: rotate(0deg); }
+        }
+
+        .shaking {
+            animation: shake 0.5s infinite;
+        }
+
+        /* 貓福蛋樣式 (CSS 繪製) */
+        .lucky-egg {
+            width: 140px;
+            height: 160px;
+            border-radius: 50% 50% 45% 45%;
+            position: absolute;
+            display: none; /* 預設隱藏 */
+            box-shadow: inset -10px -10px 20px rgba(0,0,0,0.1);
+            z-index: 5;
+            animation: popUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popUp {
+            0% { transform: scale(0) translateY(50px); opacity: 0; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+
+        /* 貓耳 */
+        .lucky-egg::before, .lucky-egg::after {
+            content: "";
+            position: absolute;
+            top: -15px;
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-bottom: 25px solid inherit; /* 繼承蛋的顏色 */
+        }
+        .lucky-egg::before { left: 20px; transform: rotate(-15deg); border-bottom-color: inherit;}
+        .lucky-egg::after { right: 20px; transform: rotate(15deg); border-bottom-color: inherit;}
+
+        /* 貓臉 */
+        .face {
+            position: absolute;
+            top: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 60px;
+        }
+        .eyes {
+            display: flex;
+            justify-content: space-between;
+            width: 60px;
+            margin: 0 auto;
+        }
+        .eye {
+            width: 12px;
+            height: 8px;
+            background: #333;
+            border-radius: 50%;
+        }
+        .nose {
+            width: 8px;
+            height: 6px;
+            background: pink;
+            border-radius: 50%;
+            margin: 5px auto;
+        }
+        .mouth {
+            width: 20px;
+            height: 10px;
+            border-bottom: 2px solid #333;
+            border-radius: 50%;
+            margin: -2px auto 0;
+        }
+        .whiskers {
+            position: absolute;
+            top: 20px;
+            width: 100%;
+        }
+        .whisker-l, .whisker-r {
+            position: absolute;
+            width: 20px;
+            height: 2px;
+            background: #333;
+            opacity: 0.5;
+        }
+        .whisker-l { left: 0; }
+        .whisker-r { right: 0; }
+
+        /* 操作區 */
+        .controls {
+            width: 90%;
+            background: #fff;
+            border-radius: 20px 20px 0 0;
+            padding: 20px;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+
+        .controls h3 {
+            margin-top: 0;
+            color: var(--dark-red);
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .egg-btn {
+            border: 2px solid #ddd;
+            background: #fff;
+            border-radius: 10px;
+            padding: 10px 5px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: all 0.2s;
+        }
+
+        .egg-btn.selected {
+            border-color: var(--primary-red);
+            background-color: #fff0f0;
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(217, 56, 56, 0.3);
+        }
+
+        .color-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-bottom: 5px;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .action-btn {
+            background: linear-gradient(to right, #ff512f, #dd2476);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(221, 36, 118, 0.4);
+            cursor: pointer;
+            width: 80%;
+            transition: transform 0.1s;
+        }
+
+        .action-btn:active {
+            transform: scale(0.95);
+        }
+
+        .action-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* 彈窗結果 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .modal {
+            background: #fff;
+            width: 85%;
+            max-width: 350px;
+            border-radius: 20px;
+            padding: 30px 20px;
+            text-align: center;
+            border: 4px solid var(--gold);
+            position: relative;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .result-title {
+            font-size: 1.5rem;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        
+        .result-title.win { color: #d93838; }
+        .result-title.lose { color: #555; }
+
+        .result-desc {
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            color: #666;
+        }
+
+        .cny-msg {
+            font-size: 2rem;
+            color: var(--primary-red);
+            font-family: "KaiTi", serif;
+            font-weight: bold;
+            margin-top: 10px;
+            border-top: 1px dashed #ddd;
+            padding-top: 15px;
+        }
+
+        .close-btn {
+            background: var(--gold);
+            border: none;
+            padding: 10px 30px;
+            border-radius: 20px;
+            margin-top: 20px;
+            font-weight: bold;
+            color: #8f1f1f;
+            cursor: pointer;
+        }
+
+        /* 裝飾：燈籠 */
+        .lantern {
+            position: absolute;
+            top: 0;
+            width: 60px;
+            height: 50px;
+            background: var(--primary-red);
+            border-radius: 10px;
+            z-index: 1;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+        }
+        .lantern::after {
+            content: "";
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            width: 4px;
+            height: 20px;
+            background: var(--gold);
+            transform: translateX(-50%);
+        }
+        .l-left { left: 20px; }
+        .l-right { right: 20px; }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>馬上好運，猜福蛋</h1>
+    </header>
+
+    <div class="lantern l-left"></div>
+    <div class="lantern l-right"></div>
+
+    <div class="stage">
+        <div class="blind-box" id="blindBox"></div>
+        
+        <div class="lucky-egg" id="luckyEgg">
+            <div class="face">
+                <div class="eyes">
+                    <div class="eye"></div><div class="eye"></div>
+                </div>
+                <div class="nose"></div>
+                <div class="mouth"></div>
+                <div class="whiskers">
+                    <div class="whisker-l" style="top:0; transform: rotate(10deg);"></div>
+                    <div class="whisker-l" style="top:10px;"></div>
+                    <div class="whisker-r" style="top:0; transform: rotate(-10deg);"></div>
+                    <div class="whisker-r" style="top:10px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <h3>猜猜看是什麼福氣？</h3>
+        <div class="options-grid" id="optionsGrid">
+            </div>
+        <button class="action-btn" id="openBtn" onclick="openBox()">拆盲盒</button>
+    </div>
+
+    <div class="modal-overlay" id="resultModal">
+        <div class="modal">
+            <h2 id="eggName" style="margin:0;">福蛋名稱</h2>
+            <div id="modalEggIcon" style="font-size:50px; margin: 10px 0;">🐱</div>
+            <div class="result-title" id="judgeTitle">判定結果</div>
+            <div class="result-desc" id="judgeDesc">諸事大吉</div>
+            <div class="cny-msg">新年快樂</div>
+            <button class="close-btn" onclick="resetGame()">再來一次</button>
+        </div>
+    </div>
+
+    <script>
+        // 福蛋資料設定
+        const eggs = [
+            { id: 1, color: '#FF3333', name: '鴻運當頭', desc: '運勢紅紅火火' }, // 紅
+            { id: 2, color: '#FFD700', name: '財源廣進', desc: '金幣滾滾而來' }, // 金
+            { id: 3, color: '#FF69B4', name: '桃花朵朵', desc: '人緣魅力爆發' }, // 粉
+            { id: 4, color: '#32CD32', name: '身體安康', desc: '活力滿滿每一天' }, // 綠
+            { id: 5, color: '#1E90FF', name: '學業進步', desc: '智慧靈光乍現' }, // 藍
+            { id: 6, color: '#9370DB', name: '紫氣東來', desc: '貴人相助好運到' }, // 紫
+            { id: 7, color: '#FFA500', name: '心想事成', desc: '願望通通實現' }, // 橘
+            { id: 8, color: '#F0F8FF', name: '單純快樂', desc: '笑口常開無煩惱', border: '#ddd' }, // 白
+            { id: 9, color: '#333333', name: '驅邪避凶', desc: '平安順遂過好年' }  // 黑
+        ];
+
+        let selectedId = null;
+        let isOpening = false;
+
+        // 初始化選項按鈕
+        const optionsGrid = document.getElementById('optionsGrid');
+        
+        eggs.forEach(egg => {
+            const btn = document.createElement('div');
+            btn.className = 'egg-btn';
+            btn.onclick = () => selectOption(egg.id, btn);
+            
+            // 顏色圓點
+            const dot = document.createElement('div');
+            dot.className = 'color-dot';
+            dot.style.backgroundColor = egg.color;
+            if(egg.border) dot.style.border = `1px solid ${egg.border}`;
+
+            // 文字
+            const text = document.createElement('span');
+            text.innerText = egg.name;
+
+            btn.appendChild(dot);
+            btn.appendChild(text);
+            optionsGrid.appendChild(btn);
+        });
+
+        function selectOption(id, btnElement) {
+            if(isOpening) return;
+            selectedId = id;
+            
+            // 移除所有選取狀態
+            document.querySelectorAll('.egg-btn').forEach(b => b.classList.remove('selected'));
+            // 加入當前選取狀態
+            btnElement.classList.add('selected');
+        }
+
+        function openBox() {
+            if(selectedId === null) {
+                alert("請先猜一種福蛋顏色喔！");
+                return;
+            }
+            if(isOpening) return;
+
+            isOpening = true;
+            const box = document.getElementById('blindBox');
+            const btn = document.getElementById('openBtn');
+            const eggElement = document.getElementById('luckyEgg');
+            
+            btn.disabled = true;
+            btn.innerText = "開箱中...";
+
+            // 1. 搖晃動畫
+            box.classList.add('shaking');
+
+            // 2. 延遲後開獎
+            setTimeout(() => {
+                box.classList.remove('shaking');
+                box.style.opacity = '0'; // 盒子消失
+                box.style.display = 'none';
+
+                // 隨機抽選
+                const resultIndex = Math.floor(Math.random() * eggs.length);
+                const resultEgg = eggs[resultIndex];
+
+                // 設定福蛋顏色
+                eggElement.style.display = 'block';
+                eggElement.style.backgroundColor = resultEgg.color;
+                // 設定貓耳顏色 (透過CSS變數或直接style)
+                eggElement.style.borderBottomColor = resultEgg.color;
+                
+                // 特殊處理白色和黑色的五官對比
+                if(resultEgg.id === 9) { // 黑色
+                     document.querySelectorAll('.whisker-l, .whisker-r').forEach(w => w.style.background = '#fff');
+                     document.querySelectorAll('.mouth').forEach(m => m.style.borderColor = '#fff');
+                     document.querySelectorAll('.eye').forEach(e => e.style.background = '#fff');
+                } else {
+                     document.querySelectorAll('.whisker-l, .whisker-r').forEach(w => w.style.background = '#333');
+                     document.querySelectorAll('.mouth').forEach(m => m.style.borderColor = '#333');
+                     document.querySelectorAll('.eye').forEach(e => e.style.background = '#333');
+                }
+
+                // 3. 顯示結果彈窗 (再延遲一點點讓玩家看到蛋)
+                setTimeout(() => {
+                    showResult(resultEgg);
+                }, 800);
+
+            }, 1000);
+        }
+
+        function showResult(resultEgg) {
+            const modal = document.getElementById('resultModal');
+            const title = document.getElementById('judgeTitle');
+            const desc = document.getElementById('judgeDesc');
+            const name = document.getElementById('eggName');
+            const icon = document.getElementById('modalEggIcon');
+
+            name.innerText = "開出： " + resultEgg.name;
+            icon.style.color = resultEgg.color;
+            if(resultEgg.id === 8) icon.style.textShadow = "0 0 2px #000"; // 白色加陰影
+
+            if (selectedId === resultEgg.id) {
+                // 答對
+                title.innerText = "🎉 答對了！";
+                title.className = "result-title win";
+                desc.innerText = "諸事大吉！" + resultEgg.desc;
+            } else {
+                // 答錯
+                title.innerText = "😲 哎呀猜錯了！";
+                title.className = "result-title lose";
+                desc.innerText = "翻新好運！" + resultEgg.desc;
+            }
+
+            modal.style.display = 'flex';
+        }
+
+        function resetGame() {
+            // 重置狀態
+            isOpening = false;
+            selectedId = null;
+            
+            document.getElementById('resultModal').style.display = 'none';
+            document.getElementById('luckyEgg').style.display = 'none';
+            document.getElementById('blindBox').style.display = 'flex';
+            document.getElementById('blindBox').style.opacity = '1';
+            
+            document.getElementById('openBtn').disabled = false;
+            document.getElementById('openBtn').innerText = "拆盲盒";
+            
+            document.querySelectorAll('.egg-btn').forEach(b => b.classList.remove('selected'));
+        }
+    </script>
+</body>
+</html>
