@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>春節心情小酒館 🍷</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes float {
+            0%, 100% { transform: translateY(0) translateX(0); }
+            50% { transform: translateY(-30px) translateX(20px); }
+        }
+        @keyframes shimmer {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.8; }
+        }
+        @keyframes glow {
+            0%, 100% { text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
+            50% { text-shadow: 0 0 20px rgba(255, 215, 0, 0.8), 0 0 30px rgba(255, 215, 0, 0.6); }
+        }
+        @keyframes drinkFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .float-anim { animation: float 15s ease-in-out infinite; }
+        .shimmer-anim { animation: shimmer 2s ease-in-out infinite; }
+        .glow-anim { animation: glow 3s ease-in-out infinite; }
+        .drink-float { animation: drinkFloat 3s ease-in-out infinite; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-red-900 via-red-800 to-rose-900 text-white min-h-screen overflow-x-hidden">
+    <!-- 背景裝飾 -->
+    <div id="bgDecor" class="fixed inset-0 opacity-10 pointer-events-none"></div>
+
+    <div class="max-w-2xl mx-auto p-4 relative z-10">
+        <!-- 標題 -->
+        <div class="text-center mb-8 mt-6">
+            <div class="flex items-center justify-center gap-3 mb-2">
+                <svg class="w-8 h-8 text-yellow-400 shimmer-anim" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"></path>
+                </svg>
+                <h1 class="text-4xl font-bold glow-anim">春節心情小酒館</h1>
+                <svg class="w-8 h-8 text-yellow-400 shimmer-anim" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"></path>
+                </svg>
+            </div>
+            <p class="text-yellow-200 text-sm">把心情說給我聽,讓酒保為你調製專屬飲品</p>
+        </div>
+
+        <!-- 音樂控制 -->
+        <div class="absolute top-4 right-4">
+            <button id="musicBtn" class="bg-red-700/50 hover:bg-red-600/50 p-3 rounded-full transition-all backdrop-blur-sm">
+                <svg id="musicIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" clip-rule="evenodd"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"></path>
+                </svg>
+            </button>
+        </div>
+
+        <!-- 輸入區域 -->
+        <div class="bg-red-800/40 backdrop-blur-md rounded-2xl p-6 mb-6 shadow-2xl border border-red-600/30">
+            <label class="block text-yellow-200 mb-3 text-sm font-semibold flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+                </svg>
+                今天的心情是...
+            </label>
+            <textarea id="moodInput" placeholder="說說你的心情吧...&#10;開心、難過、累、焦慮...什麼都可以" class="w-full bg-red-900/50 border border-red-600/50 rounded-xl p-4 text-white placeholder-red-300/50 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/50 transition-all min-h-32 resize-none"></textarea>
+            <button id="submitBtn" class="w-full mt-4 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-red-900 font-bold py-3 px-6 rounded-xl transition-all transform hover:scale-105 active:scale-95 shadow-lg">
+                請酒保調酒 🍹
+            </button>
+        </div>
+
+        <!-- 飲品展示 -->
+        <div id="drinkDisplay" class="hidden"></div>
+
+        <!-- 下載按鈕 -->
+        <div id="downloadSection" class="hidden text-center mb-6">
+            <button id="downloadBtn" class="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-bold py-3 px-6 rounded-xl transition-all transform hover:scale-105 active:scale-95 shadow-lg inline-flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                </svg>
+                下載心情紀錄 (<span id="recordCount">0</span>)
+            </button>
+        </div>
+
+        <!-- 底部裝飾 -->
+        <div class="text-center text-yellow-200/60 text-xs mt-8 pb-4">
+            <p>🏮 願新的一年,所有心情都能被溫柔對待 🏮</p>
+        </div>
+    </div>
+
+    <script>
+        // 飲品配方
+        const drinkRecipes = {
+            happy: {
+                name: '金橘氣泡',
+                color: 'from-amber-400 to-yellow-500',
+                ingredients: ['金桔', '氣泡水', '蜂蜜', '薄荷'],
+                message: '願你的笑容像這杯飲品一樣閃耀,新年快樂,繼續發光!'
+            },
+            excited: {
+                name: '火龍果狂想',
+                color: 'from-pink-500 to-rose-600',
+                ingredients: ['火龍果', '百香果', '氣泡水', '薄荷'],
+                message: '你的熱情點燃了整個酒館!新的一年,繼續保持這份活力!'
+            },
+            grateful: {
+                name: '蜜桃感恩',
+                color: 'from-orange-300 to-pink-400',
+                ingredients: ['水蜜桃', '玫瑰', '蜂蜜', '氣泡水'],
+                message: '感恩的心最美麗。這杯甜美,獻給懂得珍惜的你。'
+            },
+            proud: {
+                name: '香檳金輝',
+                color: 'from-yellow-300 to-amber-400',
+                ingredients: ['金箔', '白葡萄', '香檳', '迷迭香'],
+                message: '你值得為自己驕傲!這一刻的成就,是你努力的證明。'
+            },
+            sad: {
+                name: '深夜藍調',
+                color: 'from-blue-500 to-indigo-600',
+                ingredients: ['藍柑橘', '檸檬', '蘇打水', '薰衣草'],
+                message: '每個深夜都會過去,黎明總會到來。這杯獨特的藍,陪你度過這一刻。'
+            },
+            heartbroken: {
+                name: '玫瑰淚滴',
+                color: 'from-rose-400 to-red-500',
+                ingredients: ['玫瑰花瓣', '蔓越莓', '檸檬', '冰塊'],
+                message: '心碎是成長的印記。這杯酸甜,理解你此刻的痛。時間會讓一切好轉。'
+            },
+            disappointed: {
+                name: '灰霧沉思',
+                color: 'from-gray-500 to-slate-600',
+                ingredients: ['伯爵茶', '牛奶', '香草', '肉桂'],
+                message: '失望是期待的另一面。這次不如預期,但你依然勇敢嘗試了。'
+            },
+            nostalgic: {
+                name: '時光琥珀',
+                color: 'from-amber-500 to-orange-600',
+                ingredients: ['桂花', '烏龍茶', '蜂蜜', '冰糖'],
+                message: '回憶是心靈的珍寶。那些美好時光,永遠活在你心中。'
+            },
+            tired: {
+                name: '晨露甦醒',
+                color: 'from-green-400 to-teal-500',
+                ingredients: ['薄荷', '青檸', '綠茶', '蜂蜜'],
+                message: '累了就休息,沒關係的。這杯清新,為你注入一點能量。'
+            },
+            exhausted: {
+                name: '深眠香草',
+                color: 'from-indigo-400 to-purple-500',
+                ingredients: ['薰衣草', '洋甘菊', '牛奶', '蜂蜜'],
+                message: '你已經很努力了。放下一切,讓這杯溫暖帶你進入夢鄉。'
+            },
+            burnout: {
+                name: '冰川靜心',
+                color: 'from-cyan-300 to-blue-400',
+                ingredients: ['薄荷', '冰塊', '檸檬水', '海鹽'],
+                message: '燃燒殆盡不是終點。停下來,重新為自己充電,你值得好好休息。'
+            },
+            anxious: {
+                name: '薰衣草寧靜',
+                color: 'from-purple-400 to-pink-400',
+                ingredients: ['薰衣草', '洋甘菊', '蜂蜜', '檸檬'],
+                message: '深呼吸,一切都會好的。讓這杯溫柔陪你找回平靜。'
+            },
+            stressed: {
+                name: '橙花舒壓',
+                color: 'from-orange-400 to-yellow-400',
+                ingredients: ['橙花', '檸檬', '蜂蜜', '蘇打水'],
+                message: '壓力山大時,記得對自己溫柔一點。你已經做得夠好了。'
+            },
+            overwhelmed: {
+                name: '森林呼吸',
+                color: 'from-green-500 to-emerald-600',
+                ingredients: ['尤加利', '薄荷', '青檸', '冰塊'],
+                message: '事情太多時,一次處理一件就好。深呼吸,你可以的。'
+            },
+            nervous: {
+                name: '茉莉安撫',
+                color: 'from-lime-300 to-green-400',
+                ingredients: ['茉莉花', '綠茶', '蜂蜜', '檸檬'],
+                message: '緊張是在乎的證明。相信自己,你比想像中更強大。'
+            },
+            lonely: {
+                name: '月光私語',
+                color: 'from-slate-400 to-purple-500',
+                ingredients: ['葡萄', '玫瑰', '蘇打水', '銀箔'],
+                message: '孤獨也是一種陪伴。在這個夜晚,酒館與你同在。'
+            },
+            empty: {
+                name: '星空漫遊',
+                color: 'from-indigo-600 to-purple-700',
+                ingredients: ['藍莓', '黑莓', '蘇打水', '銀箔'],
+                message: '空虛時,讓心靈去旅行。這杯深邃,陪你探索內心宇宙。'
+            },
+            abandoned: {
+                name: '守護天使',
+                color: 'from-pink-300 to-rose-400',
+                ingredients: ['草莓', '玫瑰', '奶霜', '棉花糖'],
+                message: '即使全世界離開,你依然值得被愛。酒館永遠為你留一盞燈。'
+            },
+            hopeful: {
+                name: '晨曦許願',
+                color: 'from-orange-400 to-red-400',
+                ingredients: ['柳橙', '紅石榴', '氣泡水', '肉桂'],
+                message: '新年新希望,你的願望已被聽見。未來可期,一切都會實現!'
+            },
+            determined: {
+                name: '烈焰意志',
+                color: 'from-red-500 to-orange-600',
+                ingredients: ['辣椒', '薑', '檸檬', '蜂蜜'],
+                message: '決心如火,照亮前路。帶著這份熱情,沒有什麼能阻擋你!'
+            },
+            inspired: {
+                name: '靈感繆思',
+                color: 'from-cyan-400 to-blue-500',
+                ingredients: ['藍柑橘', '薄荷', '氣泡水', '糖漿'],
+                message: '靈感如泉湧,創意無限。這杯清爽,為你的想法注入活力!'
+            },
+            confused: {
+                name: '迷霧探索',
+                color: 'from-gray-400 to-blue-400',
+                ingredients: ['茉莉', '檸檬草', '蘇打水', '冰塊'],
+                message: '迷茫是探索的開始。慢慢來,答案會在路上等你。'
+            },
+            lost: {
+                name: '羅盤指引',
+                color: 'from-teal-400 to-cyan-500',
+                ingredients: ['薄荷', '羅勒', '檸檬', '海鹽'],
+                message: '迷路不可怕,那是找到新方向的機會。相信直覺,它會帶你回家。'
+            },
+            uncertain: {
+                name: '薄霧漫步',
+                color: 'from-gray-300 to-blue-300',
+                ingredients: ['白茶', '茉莉', '蜂蜜', '冰塊'],
+                message: '不確定也是一種答案。在模糊中前行,有時反而看得更清楚。'
+            },
+            angry: {
+                name: '火山爆發',
+                color: 'from-red-600 to-orange-700',
+                ingredients: ['辣椒', '番茄', '檸檬', '冰塊'],
+                message: '憤怒是力量的展現。感受它,釋放它,然後讓它過去。你值得平靜。'
+            },
+            frustrated: {
+                name: '颱風眼',
+                color: 'from-slate-500 to-gray-600',
+                ingredients: ['黑芝麻', '牛奶', '蜂蜜', '冰塊'],
+                message: '挫折是成功的前奏。暴風雨的中心最平靜,穿過去就是晴天。'
+            },
+            jealous: {
+                name: '翡翠心事',
+                color: 'from-emerald-500 to-green-600',
+                ingredients: ['奇異果', '薄荷', '檸檬', '蘇打水'],
+                message: '嫉妒反映了你的渴望。認識它,然後專注於自己的精彩人生。'
+            },
+            peaceful: {
+                name: '禪意竹林',
+                color: 'from-green-300 to-teal-400',
+                ingredients: ['抹茶', '竹葉', '蜂蜜', '冰塊'],
+                message: '內心平靜是最大的富足。這份寧靜,是你給自己最好的禮物。'
+            },
+            content: {
+                name: '圓滿時刻',
+                color: 'from-amber-300 to-yellow-400',
+                ingredients: ['柳橙', '蜂蜜', '肉桂', '溫水'],
+                message: '知足常樂,這一刻剛剛好。簡單的幸福,就是最真實的美好。'
+            },
+            loved: {
+                name: '玫瑰擁抱',
+                color: 'from-pink-400 to-rose-500',
+                ingredients: ['玫瑰', '草莓', '奶霜', '糖漿'],
+                message: '被愛的感覺真好。這份溫暖,值得你好好珍藏在心底。'
+            },
+            motivated: {
+                name: '雷霆出擊',
+                color: 'from-yellow-400 to-orange-500',
+                ingredients: ['芒果', '百香果', '薑', '氣泡水'],
+                message: '動力滿滿!這股衝勁會帶你到想去的地方,全力以赴吧!'
+            },
+            melancholic: {
+                name: '秋日私語',
+                color: 'from-orange-300 to-brown-400',
+                ingredients: ['桂花', '烏龍茶', '蜂蜜', '肉桂'],
+                message: '淡淡的憂傷也是一種美。讓自己沉浸其中,然後慢慢走出來。'
+            },
+            hopeless: {
+                name: '黎明前夜',
+                color: 'from-indigo-700 to-purple-800',
+                ingredients: ['黑莓', '藍莓', '檸檬', '冰塊'],
+                message: '最黑暗的時刻,黎明就在不遠處。撐住,光明很快就會到來。'
+            },
+            relieved: {
+                name: '釋放之息',
+                color: 'from-sky-300 to-blue-400',
+                ingredients: ['薄荷', '檸檬', '蘇打水', '冰塊'],
+                message: '終於可以鬆一口氣了。放下重擔的感覺真好,好好享受這份輕盈。'
+            }
+        };
+
+        let records = [];
+        let isPlaying = false;
+        let audioContext = null;
+        let musicInterval = null;
+
+        // 初始化背景裝飾
+        function initBackground() {
+            const decor = document.getElementById('bgDecor');
+            for (let i = 0; i < 20; i++) {
+                const bubble = document.createElement('div');
+                bubble.className = 'absolute rounded-full bg-yellow-400 float-anim';
+                bubble.style.width = Math.random() * 100 + 20 + 'px';
+                bubble.style.height = Math.random() * 100 + 20 + 'px';
+                bubble.style.left = Math.random() * 100 + '%';
+                bubble.style.top = Math.random() * 100 + '%';
+                bubble.style.animationDelay = Math.random() * 5 + 's';
+                decor.appendChild(bubble);
+            }
+        }
+
+        // 分析心情
+        function analyzeMood(text) {
+            const lower = text.toLowerCase();
+            
+            // 正面情緒 - 高能量
+            if (lower.match(/開心|快樂|高興|嗨|棒|讚|哈哈|爽|太好了/)) return 'happy';
+            if (lower.match(/興奮|激動|期待|雀躍|衝勁|熱血|充滿活力/)) return 'excited';
+            if (lower.match(/感恩|感謝|謝謝|幸運|珍惜|知足/)) return 'grateful';
+            if (lower.match(/驕傲|自豪|成就|達成|完成了|做到了/)) return 'proud';
+            if (lower.match(/動力|幹勁|有勁|想做|衝了|拼了/)) return 'motivated';
+            
+            // 正面情緒 - 低能量
+            if (lower.match(/平靜|平和|安詳|寧靜|放鬆|舒服/)) return 'peaceful';
+            if (lower.match(/滿足|知足|剛好|夠了|可以了/)) return 'content';
+            if (lower.match(/被愛|有愛|溫暖|幸福|甜蜜/)) return 'loved';
+            if (lower.match(/鬆了口氣|終於|解脱|放下了|好多了/)) return 'relieved';
+            if (lower.match(/靈感|創意|想法|點子|啟發/)) return 'inspired';
+            
+            // 負面情緒 - 悲傷系
+            if (lower.match(/難過|傷心|哭|痛|失落|憂鬱|不開心/)) return 'sad';
+            if (lower.match(/心碎|分手|失戀|背叛|被傷害/)) return 'heartbroken';
+            if (lower.match(/失望|不如預期|期待落空|算了/)) return 'disappointed';
+            if (lower.match(/懷念|想念|回憶|以前|那時候|過去/)) return 'nostalgic';
+            if (lower.match(/憂鬱|淡淡的|惆悵|感傷/)) return 'melancholic';
+            if (lower.match(/絕望|沒希望|放棄|不想活|走不下去/)) return 'hopeless';
+            
+            // 負面情緒 - 疲憊系
+            if (lower.match(/累|疲憊|睏|想睡|無力|倦/)) return 'tired';
+            if (lower.match(/精疲力盡|撐不住|好累|崩潰|受夠了/)) return 'exhausted';
+            if (lower.match(/燃燒殆盡|過勞|壓榨|耗盡|不想動/)) return 'burnout';
+            
+            // 負面情緒 - 焦慮系
+            if (lower.match(/焦慮|緊張|擔心|不安|煩|壓力/)) return 'anxious';
+            if (lower.match(/壓力大|喘不過氣|負荷|好多事|忙不過來/)) return 'stressed';
+            if (lower.match(/overwhelm|應付不來|太多了|承受不住/)) return 'overwhelmed';
+            if (lower.match(/緊張|怕|害怕|恐懼|不敢/)) return 'nervous';
+            
+            // 負面情緒 - 孤獨系
+            if (lower.match(/孤單|寂寞|獨自|alone|一個人|沒人/)) return 'lonely';
+            if (lower.match(/空虛|空洞|沒感覺|麻木|無感/)) return 'empty';
+            if (lower.match(/被拋棄|被忽略|沒人在乎|不重要/)) return 'abandoned';
+            
+            // 負面情緒 - 憤怒系
+            if (lower.match(/生氣|憤怒|火大|氣死|不爽|幹/)) return 'angry';
+            if (lower.match(/挫折|卡住|不順|為什麼|受阻/)) return 'frustrated';
+            if (lower.match(/嫉妒|羨慕|眼紅|不公平|憑什麼/)) return 'jealous';
+            
+            // 中性情緒 - 希望系
+            if (lower.match(/希望|期盼|願望|夢想|相信|會好的/)) return 'hopeful';
+            if (lower.match(/決心|下定決心|一定要|我要|目標/)) return 'determined';
+            
+            // 中性情緒 - 迷茫系
+            if (lower.match(/困惑|迷茫|不知道|疑惑|混亂/)) return 'confused';
+            if (lower.match(/迷路|找不到|不知道方向|該怎麼辦/)) return 'lost';
+            if (lower.match(/不確定|可能|也許|猶豫|搖擺/)) return 'uncertain';
+            
+            // 如果都不匹配,隨機返回一個
+            const keys = Object.keys(drinkRecipes);
+            return keys[Math.floor(Math.random() * keys.length)];
+        }
+
+        // 播放環境音樂
+        function playAmbience() {
+            if (!isPlaying || !audioContext) return;
+            
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            const filter = audioContext.createBiquadFilter();
+            
+            oscillator.connect(filter);
+            filter.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            const baseFreq = 200 + Math.random() * 200;
+            oscillator.frequency.value = baseFreq;
+            oscillator.type = 'sine';
+            
+            filter.type = 'lowpass';
+            filter.frequency.value = 800;
+            
+            gainNode.gain.value = 0;
+            gainNode.gain.linearRampToValueAtTime(0.08, audioContext.currentTime + 0.5);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 4);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 4);
+        }
+
+        // 切換音樂
+        function toggleMusic() {
+            isPlaying = !isPlaying;
+            
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            
+            const icon = document.getElementById('musicIcon');
+            if (isPlaying) {
+                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path>';
+                playAmbience();
+                musicInterval = setInterval(playAmbience, 5000);
+            } else {
+                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"></path>';
+                if (musicInterval) {
+                    clearInterval(musicInterval);
+                    musicInterval = null;
+                }
+            }
+        }
+
+        // 顯示飲品
+        function showDrink(drink, mood) {
+            const display = document.getElementById('drinkDisplay');
+            
+            const bubblesHTML = Array.from({length: 5}, (_, i) => `
+                <div class="absolute bg-white/60 rounded-full" style="
+                    width: ${Math.random() * 8 + 4}px;
+                    height: ${Math.random() * 8 + 4}px;
+                    left: ${20 + Math.random() * 60}%;
+                    bottom: ${Math.random() * 80}%;
+                    animation: float ${Math.random() * 3 + 2}s ease-in-out infinite;
+                    animation-delay: ${Math.random() * 2}s;
+                "></div>
+            `).join('');
+            
+            const ingredientsHTML = drink.ingredients.map(ing => 
+                `<span class="bg-red-900/50 px-3 py-1 rounded-full text-xs text-yellow-200 border border-yellow-400/30">${ing}</span>`
+            ).join('');
+            
+            display.innerHTML = `
+                <div class="bg-gradient-to-br from-red-800/60 to-rose-900/60 backdrop-blur-lg rounded-2xl p-8 mb-6 shadow-2xl border border-yellow-400/30 drink-float">
+                    <div class="text-center mb-6">
+                        <div class="relative inline-block w-40 h-48 mx-auto mb-4">
+                            <div class="absolute inset-0 flex items-end justify-center">
+                                <div class="relative w-32 h-40">
+                                    <div class="absolute bottom-0 w-full h-36 bg-gradient-to-b ${drink.color} rounded-b-3xl opacity-80 shadow-2xl" style="clip-path: polygon(15% 0%, 85% 0%, 95% 100%, 5% 100%)"></div>
+                                    <div class="absolute bottom-0 w-full h-36 bg-gradient-to-tr from-white/40 to-transparent rounded-b-3xl shimmer-anim" style="clip-path: polygon(15% 0%, 85% 0%, 95% 100%, 5% 100%)"></div>
+                                    <div class="absolute top-0 w-full h-3 bg-gradient-to-b from-white/60 to-white/20 rounded-t-lg"></div>
+                                    ${bubblesHTML}
+                                </div>
+                            </div>
+                            <div class="absolute top-0 right-4">
+                                <div class="w-8 h-8 bg-yellow-300/60 rounded-full blur-sm"></div>
+                            </div>
+                            <div class="absolute right-8 top-0 w-1 h-32 bg-gradient-to-b from-red-300 to-red-400 transform rotate-12 rounded-full shadow-lg"></div>
+                            <div class="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-36 h-2 bg-amber-800/40 rounded-full blur-sm"></div>
+                        </div>
+                        <h2 class="text-3xl font-bold text-yellow-300 mb-2">${drink.name}</h2>
+                        <div class="flex flex-wrap justify-center gap-2 mb-4">
+                            ${ingredientsHTML}
+                        </div>
+                    </div>
+                    <div class="bg-red-950/50 rounded-xl p-6 border-l-4 border-yellow-400">
+                        <p class="text-yellow-100 leading-relaxed text-center italic">
+                            "${drink.message}"
+                        </p>
+                    </div>
+                </div>
+            `;
+            
+            display.classList.remove('hidden');
+            
+            // 儲存紀錄
+            records.push({
+                timestamp: new Date().toLocaleString('zh-TW'),
+                mood: mood,
+                drink: drink.name,
+                message: drink.message
+            });
+            
+            // 更新下載按鈕
+            document.getElementById('recordCount').textContent = records.length;
+            document.getElementById('downloadSection').classList.remove('hidden');
+        }
+
+        // 下載資料
+        function downloadData() {
+            const dataStr = JSON.stringify(records, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `心情酒館紀錄_${new Date().getTime()}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // 事件監聽
+        document.getElementById('musicBtn').addEventListener('click', toggleMusic);
+        
+        document.getElementById('submitBtn').addEventListener('click', () => {
+            const mood = document.getElementById('moodInput').value.trim();
+            if (!mood) return;
+            
+            const moodType = analyzeMood(mood);
+            const drink = drinkRecipes[moodType];
+            showDrink(drink, mood);
+            
+            // 清空輸入框
+            document.getElementById('moodInput').value = '';
+        });
+        
+        document.getElementById('moodInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                document.getElementById('submitBtn').click();
+            }
+        });
+        
+        document.getElementById('downloadBtn').addEventListener('click', downloadData);
+        
+        // 初始化
+        initBackground();
+    </script>
+</body>
+</html>
