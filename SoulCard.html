@@ -2,38 +2,583 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>高我指引 - 靈魂神諭卡</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Noto+Serif+TC:wght@300;500;700&display=swap');
 
         :root {
-            --primary-glow: rgba(255, 255, 240, 0.9);
             --card-back-color: #2b3044;
             --card-border: #e8c37e;
-            --accent-purple: #bfa3da;
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            user-select: none; /* 防止選取文字影響體驗 */
+            user-select: none;
+            -webkit-tap-highlight-color: transparent; /* 移除手機點擊藍框 */
+        }
+
+        /* --- 修復背景問題：獨立的固定背景層 --- */
+        .fixed-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -10;
+            background: linear-gradient(160deg, #dbe6f6 0%, #c5d9f1 40%, #e6dee9 100%);
+            /* 防止背景滑動 */
+            background-attachment: fixed; 
         }
 
         body {
             font-family: 'Noto Serif TC', serif;
-            background: linear-gradient(160deg, #dbe6f6 0%, #c5d9f1 40%, #e6dee9 100%);
-            height: 100vh;
+            min-height: 100vh; /* 改用 min-height 避免截斷 */
             overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             color: #4a4a4a;
             position: relative;
         }
 
-        /* --- 升級版迷濛天使背景 --- */
+        /* --- 氛圍層 --- */
+        .atmosphere {
+            position: fixed; /* 改為 fixed */
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: -5;
+            pointer-events: none;
+        }
+
+        .cloud {
+            position: absolute;
+            background: radial-gradient(circle, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 70%);
+            border-radius: 50%;
+            filter: blur(40px);
+            opacity: 0.6;
+            animation: floatCloud 25s infinite alternate ease-in-out;
+            will-change: transform; /* 效能優化 */
+        }
+        .c1 { width: 60vw; height: 60vw; top: -10%; left: -10%; animation-duration: 30s; }
+        .c2 { width: 50vw; height: 50vw; bottom: -10%; right: -10%; animation-duration: 35s; background: radial-gradient(circle, rgba(230,220,255,0.5) 0%, rgba(255,255,255,0) 70%); }
+        .c3 { width: 30vw; height: 30vw; top: 40%; left: 30%; animation-duration: 20s; opacity: 0.3; }
+
+        .sparkles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(white 1px, transparent 1px),
+                radial-gradient(rgba(255,255,255,0.8) 2px, transparent 2px);
+            background-size: 100px 100px, 200px 200px;
+            background-position: 0 0, 40px 60px;
+            opacity: 0.3;
+            animation: twinkle 5s infinite linear;
+        }
+
+        @keyframes floatCloud {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(30px, 20px); }
+        }
+        @keyframes twinkle {
+            0% { opacity: 0.2; transform: translateY(0); }
+            50% { opacity: 0.4; }
+            100% { opacity: 0.2; transform: translateY(-20px); }
+        }
+
+        /* --- 主容器 --- */
+        .app-container {
+            width: 100%;
+            max-width: 1000px;
+            height: 100vh; /* 這裡保持 100vh 讓內容居中 */
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            margin: 0 auto;
+        }
+
+        .screen {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.6s ease, transform 0.6s ease;
+            opacity: 0;
+            pointer-events: none;
+            padding: 20px;
+            z-index: 1;
+            /* 隱藏未激活的頁面以防干擾點擊 */
+            visibility: hidden; 
+        }
+
+        .screen.active {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: all;
+            z-index: 10;
+        }
+
+        /* --- 1. 首頁 Intro --- */
+        .intro-content {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.45);
+            padding: 40px;
+            border-radius: 20px;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px); /* Safari 支援 */
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border: 1px solid rgba(255,255,255,0.6);
+        }
+
+        .intro-content h1 {
+            font-size: 2.8rem;
+            color: #554c6b;
+            margin-bottom: 1rem;
+            font-family: 'Cinzel', serif;
+            letter-spacing: 3px;
+        }
+
+        .intro-content p {
+            font-size: 1.1rem;
+            color: #6a6a8a;
+            margin-bottom: 2.5rem;
+            line-height: 1.8;
+            max-width: 500px;
+        }
+
+        .btn {
+            padding: 16px 45px;
+            font-size: 1.2rem;
+            background: linear-gradient(135deg, #fff 0%, #f3e7ff 100%);
+            border: 1px solid #d4c1eb;
+            border-radius: 50px;
+            color: #6b5b95;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(107, 91, 149, 0.15);
+            transition: transform 0.2s;
+            font-family: 'Noto Serif TC', serif;
+            font-weight: 500;
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        /* --- 2. 抽卡區 Spread (修復亂跳的核心區) --- */
+        .instruction {
+            position: absolute;
+            top: 12%;
+            font-size: 1.3rem;
+            color: #554c6b;
+            text-shadow: 0 0 10px rgba(255,255,255,0.8);
+            letter-spacing: 1px;
+            animation: fadeIn 2s ease;
+            text-align: center;
+            width: 100%;
+        }
+
+        .card-spread-container {
+            position: relative;
+            width: 100%;
+            height: 380px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            margin-top: 50px;
+            perspective: 1000px;
+        }
+
+        /* 卡片插槽：負責「位置」與「旋轉」 (不執行動畫) */
+        .card-slot {
+            position: absolute;
+            width: 100px;
+            height: 170px;
+            transform-origin: bottom center;
+            cursor: pointer;
+            z-index: 10;
+            /* 讓變換更平滑 */
+            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            /* 解決手機上的閃爍問題 */
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+        }
+
+        /* 懸停/選中效果：整個插槽放大 */
+        .card-slot:hover {
+            z-index: 100 !important;
+            transform: translateY(-40px) scale(1.15) !important;
+        }
+
+        /* 卡片實體：負責「圖案」與「呼吸動畫」 (與位置分離) */
+        .card-back-inner {
+            width: 100%;
+            height: 100%;
+            background: var(--card-back-color);
+            border-radius: 8px;
+            border: 2px solid var(--card-border);
+            box-shadow: -2px 5px 15px rgba(0,0,0,0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-image: 
+                radial-gradient(circle at 50% 30%, rgba(232, 195, 126, 0.3) 2px, transparent 2px),
+                linear-gradient(to bottom, #2b3044 0%, #1a1d2e 100%);
+            background-size: 20px 20px, 100% 100%;
+            position: relative;
+            
+            /* 這裡執行呼吸動畫，不會影響父層的旋轉 */
+            animation: breathe 4s infinite ease-in-out;
+            will-change: transform;
+        }
+
+        .card-back-inner::after {
+            content: '🪶';
+            font-size: 2.5rem;
+            color: rgba(232, 195, 126, 0.3);
+            filter: drop-shadow(0 0 5px rgba(255,215,0,0.5));
+        }
+
+        /* 呼吸動畫 Keyframes */
+        @keyframes breathe {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-6px); }
+            100% { transform: translateY(0px); }
+        }
+
+        /* --- 3. 結果頁 Result --- */
+        .result-wrapper {
+            perspective: 1200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+
+        .result-card-container {
+            width: 280px;
+            height: 480px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 1s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            transform: rotateY(180deg);
+            margin-bottom: 30px;
+        }
+
+        .result-card-container.flipped {
+            transform: rotateY(0deg);
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 15px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+            overflow: hidden;
+            -webkit-backface-visibility: hidden; /* Safari Fix */
+        }
+
+        .card-face-back {
+            background: var(--card-back-color);
+            border: 4px solid var(--card-border);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transform: rotateY(180deg);
+        }
+        
+        .card-face-back::after {
+            content: '✨';
+            font-size: 4rem;
+        }
+
+        .card-face-front {
+            background: #fff;
+            transform: rotateY(0deg);
+            display: flex;
+            flex-direction: column;
+            border: 8px solid #fff;
+        }
+
+        /* 牌面設計 */
+        .art-frame {
+            flex: 1.2;
+            background: #fdfbf7;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .art-bg {
+            position: absolute;
+            width: 150%;
+            height: 150%;
+            background: radial-gradient(circle, var(--glow-color) 0%, transparent 70%);
+            opacity: 0.4;
+            animation: pulseLight 4s infinite ease-in-out;
+        }
+
+        .art-icon {
+            font-size: 6rem;
+            z-index: 2;
+            filter: drop-shadow(0 10px 10px rgba(0,0,0,0.1));
+            transform: scale(0.9);
+        }
+
+        .text-frame {
+            flex: 1;
+            padding: 20px 25px;
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .card-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.4rem;
+            color: #333;
+            margin-bottom: 12px;
+            font-weight: 700;
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 8px;
+            width: 100%;
+        }
+
+        .card-msg {
+            font-size: 1rem;
+            color: #555;
+            line-height: 1.6;
+            font-style: italic;
+        }
+        
+        .card-id {
+            position: absolute;
+            bottom: 5px;
+            font-size: 0.7rem;
+            color: #ccc;
+            letter-spacing: 2px;
+        }
+
+        @keyframes pulseLight {
+            0%, 100% { transform: scale(1); opacity: 0.4; }
+            50% { transform: scale(1.2); opacity: 0.6; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- Mobile Adapt --- */
+        @media (max-width: 600px) {
+            .intro-content { width: 90%; padding: 30px 20px; }
+            .card-spread-container { height: 320px; margin-top: 30px; }
+            .card-slot { width: 80px; height: 140px; } /* 稍微加大手機版卡片 */
+            .result-card-container { width: 85vw; height: 60vh; max-height: 480px; }
+            .intro-content h1 { font-size: 2rem; }
+            .instruction { font-size: 1.1rem; top: 10%; }
+            .art-icon { font-size: 5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="fixed-background"></div>
+
+    <div class="atmosphere">
+        <div class="cloud c1"></div>
+        <div class="cloud c2"></div>
+        <div class="cloud c3"></div>
+        <div class="sparkles"></div>
+    </div>
+
+    <div class="app-container">
+        
+        <div id="intro-screen" class="screen active">
+            <div class="intro-content">
+                <h1>SOUL ORACLE</h1>
+                <p>親愛的靈魂，宇宙有訊息要傳遞給你。<br>請閉上雙眼，深呼吸三次，<br>在心中默想你的問題。</p>
+                <button class="btn" onclick="startDivination()">開始連結</button>
+            </div>
+        </div>
+
+        <div id="spread-screen" class="screen">
+            <div class="instruction">請憑直覺，點擊一張發光的牌</div>
+            <div class="card-spread-container" id="card-spread">
+                </div>
+        </div>
+
+        <div id="result-screen" class="screen">
+            <div class="result-wrapper">
+                <div class="result-card-container" id="result-card">
+                    <div class="card-face card-face-back"></div>
+                    <div class="card-face card-face-front">
+                        <div class="art-frame">
+                            <div class="art-bg" id="res-bg"></div>
+                            <div class="art-icon" id="res-icon">🌟</div>
+                        </div>
+                        <div class="text-frame">
+                            <div class="card-title" id="res-title">Title</div>
+                            <div class="card-msg" id="res-text">Text content...</div>
+                            <div class="card-id">GUIDANCE</div>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn" onclick="resetApp()" style="margin-top: 30px;">感謝指引</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const oracleDeck = [
+            { t: "神聖秩序", c: "#e0c3fc", i: "🕊️", m: "一切都在完美的安排中，即使現在看似混亂。請信任宇宙的時機，放下控制，你正被溫柔地引導著。" },
+            { t: "內在智慧", c: "#a1c4fd", i: "👁️", m: "你尋求的答案不在外在，而是在你心中。安靜下來，聆聽那微小而堅定的聲音。" },
+            { t: "療癒之光", c: "#d4fc79", i: "✨", m: "允許自己休息。大天使拉斐爾的綠色光芒正在包圍你，舊有的傷痛正在轉化為智慧。" },
+            { t: "展翅高飛", c: "#fbc2eb", i: "🦋", m: "你已經準備好了。不要害怕展現你的真實色彩，蛻變的過程雖然艱辛，但結果將無比美麗。" },
+            { t: "豐盛之流", c: "#ffd1ff", i: "💎", m: "匱乏只是幻象。敞開心胸接收，宇宙想要給你的遠比你想像的更多。" },
+            { t: "守護天使", c: "#c2e9fb", i: "👼", m: "你並不孤單。當你感到無助時，呼喚我們，我們一直在你身邊守護著你。" },
+            { t: "寬恕", c: "#ff9a9e", i: "❤️", m: "寬恕不是為了對方，而是為了釋放你自己。剪斷沈重的鎖鏈，讓愛重新流動。" },
+            { t: "顯化力量", c: "#84fab0", i: "🌟", m: "你的思想與語言具有創造力。專注於你「想要」的，而不是你恐懼的。" },
+            { t: "耐心等待", c: "#a6c0fe", i: "⏳", m: "種子在土裡發芽需要時間。現在看似停滯，其實是根基在扎深。保持信心。" },
+            { t: "勇氣", c: "#f6d365", i: "🦁", m: "面對恐懼，你會發現它只是一隻紙老虎。你比你想像的更強大、更勇敢。" },
+            { t: "靈魂伴侶", c: "#ffdde1", i: "🤝", m: "一段重要的關係即將進入或深化。這是一面鏡子，幫助你看見更完整的自己。" },
+            { t: "純真", c: "#e0c3fc", i: "🦄", m: "用孩子的眼睛看世界。放下過多的分析與評判，生活處處都是奇蹟。" },
+            { t: "界線", c: "#fda085", i: "🛡️", m: "愛自己包含了設立健康的界線。對他人說「不」，有時是對自己說「是」。" },
+            { t: "順流而行", c: "#89f7fe", i: "🌊", m: "不要逆流而上。放鬆身體，隨波逐流，生命之河會將你帶往最適合你的彼岸。" },
+            { t: "感恩", c: "#f5efef", i: "🙏", m: "感恩是最高頻率的振動。細數你擁有的美好，更多美好就會被吸引而來。" },
+            { t: "天賦", c: "#ffecd2", i: "🎁", m: "你帶著獨特的禮物來到世上。不要隱藏你的光芒，世界需要你的貢獻。" },
+            { t: "轉彎", c: "#cfd9df", i: "↩️", m: "如果前方路不通，那是一個保護。轉個彎，更好的風景在另一條路上。" },
+            { t: "喜悅", c: "#fff1eb", i: "😂", m: "嚴肅不代表靈性。大笑是最好的藥，去做讓你會心一笑的事情吧！" },
+            { t: "靜心", c: "#dad4ec", i: "🧘", m: "外界的聲音太吵雜了。每天花五分鐘獨處，你會在寧靜中找回力量。" },
+            { t: "夢境", c: "#30cfd0", i: "🌙", m: "留意你的夢境，潛意識正在傳遞重要的訊息。床邊放一支筆，記錄下來。" },
+            { t: "自然", c: "#96e6a1", i: "🌿", m: "去赤腳踩在草地上，去擁抱一棵樹。大地的能量能幫助你落地與充電。" },
+            { t: "放手", c: "#fdfbfb", i: "🍂", m: "像秋天的樹木一樣，優雅地放手不再服務於你的事物。空出的空間將迎來新生。" },
+            { t: "自我價值", c: "#fddb92", i: "👑", m: "你的價值不取決於你的成就或他人的評價。你本身就是無價之寶。" },
+            { t: "行動", c: "#ff758c", i: "🚀", m: "祈禱之後，需要配合行動。邁出那小小的一步，宇宙會獎勵你的主動。" },
+            { t: "平衡", c: "#a8edea", i: "⚖️", m: "檢視你的生活：工作與休息、給予與接收是否失衡？回歸中心。" },
+            { t: "愛", c: "#ffc3a0", i: "💖", m: "這一切問題的答案都是「愛」。用愛回應這個狀況，奇蹟就會發生。" },
+            { t: "真相", c: "#a18cd1", i: "🔦", m: "摘下面具，誠實面對自己。真相雖然有時刺眼，但它是自由的唯一途徑。" },
+            { t: "慶祝", c: "#ffafbd", i: "🎉", m: "不要等到大成就才慶祝。為你今天的小小進步喝采，喜悅吸引喜悅。" },
+            { t: "直覺", c: "#8ec5fc", i: "🔮", m: "那一閃而過的念頭，是天使的私語。相信你的第一直覺，邏輯常常會騙人。" },
+            { t: "家庭", c: "#fbc7d4", i: "🏠", m: "家庭課題正在浮現。帶著愛與理解去化解世代的業力，你是那個改變的起點。" },
+            { t: "簡單", c: "#e6e9f0", i: "⚪", m: "把事情簡單化。你把問題想得太複雜了，其實解決方案單純而直接。" },
+            { t: "重生", c: "#d299c2", i: "🔥", m: "像鳳凰一樣，在灰燼中重生。不要哀悼過去，擁抱全新的你。" },
+            { t: "保護", c: "#4facfe", i: "🧿", m: "你被金色的光盾保護著。負面能量無法侵入，請安心地發光。" }
+        ];
+
+        let isAnimating = false;
+
+        function switchScreen(id) {
+            document.querySelectorAll('.screen').forEach(el => {
+                el.classList.remove('active');
+                el.style.opacity = 0;
+            });
+            const target = document.getElementById(id);
+            target.classList.add('active');
+            setTimeout(() => target.style.opacity = 1, 50);
+        }
+
+        function startDivination() {
+            renderSpread();
+            switchScreen('spread-screen');
+        }
+
+        function renderSpread() {
+            const container = document.getElementById('card-spread');
+            container.innerHTML = '';
+            
+            const isMobile = window.innerWidth < 600;
+            const displayCount = isMobile ? 18 : 28;
+            
+            const totalArc = isMobile ? 80 : 100;
+            const startAngle = -totalArc / 2;
+            const step = totalArc / (displayCount - 1);
+
+            for (let i = 0; i < displayCount; i++) {
+                const cardSlot = document.createElement('div');
+                cardSlot.className = 'card-slot';
+                
+                // 計算位置與角度 (只執行一次，靜態)
+                let angle = startAngle + (step * i);
+                
+                // 隨機微調
+                const randomAngleJitter = (Math.random() * 4) - 2;
+                const finalAngle = angle + randomAngleJitter;
+                
+                let baseTranslateY = Math.abs(finalAngle) * (isMobile ? 1.2 : 1.5);
+                const randomYJitter = (Math.random() * 10) - 5; 
+                let finalTranslateY = baseTranslateY + randomYJitter;
+
+                cardSlot.style.zIndex = i;
+                // 父層：只負責定位，不負責呼吸動畫
+                cardSlot.style.transform = `rotate(${finalAngle}deg) translateY(${finalTranslateY}px)`;
+
+                // 內層：負責外觀和呼吸動畫
+                const cardInner = document.createElement('div');
+                cardInner.className = 'card-back-inner';
+                // 設定隨機的動畫延遲，讓大家不要一起動
+                cardInner.style.animationDelay = `${Math.random() * 2}s`;
+                
+                cardSlot.appendChild(cardInner);
+
+                cardSlot.onclick = function() {
+                    if(isAnimating) return;
+                    
+                    // 點擊特效：父層改變 Transform
+                    this.style.transition = "all 0.4s ease";
+                    this.style.transform = `translateY(-150px) scale(1.3) rotate(0deg)`;
+                    this.style.opacity = '0';
+                    
+                    pickCard();
+                };
+
+                container.appendChild(cardSlot);
+            }
+        }
+
+        function pickCard() {
+            isAnimating = true;
+            const randomIndex = Math.floor(Math.random() * oracleDeck.length);
+            const data = oracleDeck[randomIndex];
+
+            document.getElementById('res-title').innerText = data.t;
+            document.getElementById('res-text').innerText = data.m;
+            document.getElementById('res-icon').innerText = data.i;
+            document.getElementById('res-bg').style.setProperty('--glow-color', data.c);
+
+            setTimeout(() => {
+                switchScreen('result-screen');
+                setTimeout(() => {
+                    document.getElementById('result-card').classList.add('flipped');
+                    isAnimating = false;
+                }, 300);
+            }, 600);
+        }
+
+        function resetApp() {
+            document.getElementById('result-card').classList.remove('flipped');
+            setTimeout(() => {
+                switchScreen('intro-screen');
+            }, 600);
+        }
+    </script>
+</body>
+</html>
         .atmosphere {
             position: absolute;
             width: 100%;
