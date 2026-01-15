@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>指導靈神諭卡 · 心靈指引</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft JhengHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* 天使光暈動畫背景 */
+        .angel-bg {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .angel {
+            position: absolute;
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 70%);
+            animation: float 8s ease-in-out infinite;
+            opacity: 0.6;
+        }
+
+        .angel:nth-child(1) {
+            top: 10%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+
+        .angel:nth-child(2) {
+            top: 60%;
+            right: 15%;
+            animation-delay: 2s;
+            animation-duration: 10s;
+        }
+
+        .angel:nth-child(3) {
+            bottom: 20%;
+            left: 20%;
+            animation-delay: 4s;
+            animation-duration: 12s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) translateX(0); }
+            25% { transform: translateY(-20px) translateX(10px); }
+            50% { transform: translateY(-10px) translateX(-10px); }
+            75% { transform: translateY(-30px) translateX(5px); }
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .welcome-screen, .card-selection, .card-reveal {
+            text-align: center;
+            animation: fadeIn 1s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 {
+            color: white;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px rgba(255,255,255,0.5);
+            letter-spacing: 3px;
+        }
+
+        .subtitle {
+            color: rgba(255,255,255,0.9);
+            font-size: 1.2em;
+            margin-bottom: 40px;
+            line-height: 1.8;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7));
+            color: #667eea;
+            border: none;
+            padding: 18px 50px;
+            font-size: 1.2em;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 12px 35px rgba(0,0,0,0.3);
+            background: linear-gradient(135deg, #ffffff, rgba(255,255,255,0.9));
+        }
+
+        .cards-container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            margin: 40px auto;
+            perspective: 1000px;
+            position: relative;
+            height: 250px;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .card {
+            width: 90px;
+            height: 135px;
+            background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            margin-left: -45px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            border: 3px solid rgba(255,255,255,0.3);
+        }
+
+        .card::before {
+            content: '✨';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3em;
+            opacity: 0.5;
+        }
+
+        .card:hover {
+            transform: translateY(-20px) scale(1.1);
+            box-shadow: 0 15px 40px rgba(255,255,255,0.3);
+            border-color: rgba(255,255,255,0.6);
+            z-index: 10;
+        }
+
+        .revealed-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 500px;
+            margin: 20px auto;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.3);
+            animation: revealCard 0.6s ease-out;
+        }
+
+        @keyframes revealCard {
+            from {
+                opacity: 0;
+                transform: rotateY(90deg) scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: rotateY(0) scale(1);
+            }
+        }
+
+        .card-image {
+            width: 200px;
+            height: 200px;
+            margin: 0 auto 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ffeaa7, #fdcb6e);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 5em;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .card-title {
+            font-size: 2em;
+            color: #667eea;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+
+        .card-message {
+            font-size: 1.1em;
+            color: #4a5568;
+            line-height: 1.8;
+            margin-bottom: 30px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 2em; }
+            .subtitle { font-size: 1em; padding: 0 10px; }
+            .card { width: 70px; height: 105px; }
+            .card::before { font-size: 2em; }
+            .cards-container { gap: 5px; padding: 0 10px; }
+            .revealed-card { padding: 20px; }
+            .card-image { width: 150px; height: 150px; font-size: 4em; }
+            .card-title { font-size: 1.5em; }
+            .card-message { font-size: 1em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="angel-bg">
+        <div class="angel"></div>
+        <div class="angel"></div>
+        <div class="angel"></div>
+    </div>
+
+    <div class="container">
+        <!-- 歡迎頁面 -->
+        <div id="welcomeScreen" class="welcome-screen">
+            <h1>✨ 指導靈神諭卡 ✨</h1>
+            <p class="subtitle">
+                閉上雙眼，深呼吸<br>
+                讓心靈沉靜，感受宇宙的能量<br>
+                當你準備好了，指導靈會為你帶來今日的訊息
+            </p>
+            <button class="btn" onclick="startDrawing()">開始抽牌</button>
+        </div>
+
+        <!-- 選牌頁面 -->
+        <div id="cardSelection" class="card-selection hidden">
+            <h1>請選擇一張牌</h1>
+            <p class="subtitle">用心感受，讓直覺引導你的選擇</p>
+            <div class="cards-container" id="cardsContainer"></div>
+        </div>
+
+        <!-- 揭示頁面 -->
+        <div id="cardReveal" class="card-reveal hidden">
+            <div class="revealed-card">
+                <div class="card-image" id="cardIcon"></div>
+                <h2 class="card-title" id="cardTitle"></h2>
+                <p class="card-message" id="cardMessage"></p>
+                <button class="btn" onclick="resetCards()">再抽一次</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const oracleCards = [
+            {
+                icon: '👼',
+                title: '天使的祝福',
+                message: '你正被神聖的愛與光包圍著。此刻，天使們正在守護你，為你的生命帶來奇蹟與轉變。相信一切都會在最完美的時機發生，放下擔憂，擁抱當下的美好。你值得擁有所有的幸福與豐盛。'
+            },
+            {
+                icon: '🌟',
+                title: '內在之光',
+                message: '你內在的光芒比你想像的更加耀眼。現在是時候讓真實的自己綻放光彩。不要害怕展現你的獨特性，世界需要你的光。當你勇敢做自己時，你會吸引到與你共鳴的人事物。'
+            },
+            {
+                icon: '🦋',
+                title: '蛻變重生',
+                message: '就像蝴蝶破繭而出，你正經歷著美麗的蛻變。舊有的模式正在消散，新的可能性正在展開。擁抱這個轉變的過程，即使感到不適，這都是成長必經的旅程。更美好的你正在誕生。'
+            },
+            {
+                icon: '💫',
+                title: '宇宙的指引',
+                message: '宇宙正以各種方式向你傳遞訊息。注意那些看似巧合的事件，它們都是神聖的安排。相信你的直覺，它會引導你走向正確的方向。你並不孤單，整個宇宙都在支持著你。'
+            },
+            {
+                icon: '🌸',
+                title: '愛與療癒',
+                message: '是時候溫柔對待自己了。你已經足夠堅強，現在讓愛進入你的心，療癒那些傷痛。原諒過去的自己，擁抱現在的你。當你學會愛自己，整個世界都會以愛回應你。你是值得被愛的。'
+            },
+            {
+                icon: '🕊️',
+                title: '和平之心',
+                message: '內在的平靜是你最大的力量。在這個喧囂的世界中，找到屬於自己的寧靜時刻。當你的心平靜如水，便能清晰看見生命的真相。讓和平從你的內心向外擴散，影響周遭的一切。'
+            },
+            {
+                icon: '🌈',
+                title: '希望之虹',
+                message: '風雨過後必見彩虹。你經歷的困難都是為了讓你變得更加堅韌。保持希望，因為美好的事物正在來臨的路上。每個挑戰都是一個祝福的偽裝，帶你走向更高的境界。'
+            },
+            {
+                icon: '✨',
+                title: '奇蹟顯化',
+                message: '你擁有創造奇蹟的能力。你的想法、信念和行動正在塑造你的現實。專注於你想要的，而非你害怕的。宇宙正在回應你的振動頻率，準備好迎接美好的顯化吧。'
+            },
+            {
+                icon: '🌙',
+                title: '直覺智慧',
+                message: '月亮提醒你傾聽內在的聲音。你的直覺比理性分析更了解什麼對你最好。相信那些無法解釋的感覺和預感，它們是你的靈魂在指引你。靜心聆聽，答案就在你心中。'
+            },
+            {
+                icon: '🔥',
+                title: '熱情之火',
+                message: '重新點燃你內在的熱情之火。是時候追求那些讓你心跳加速的夢想了。不要讓恐懼澆熄你的熱情，勇敢地燃燒吧！當你全心投入所愛之事，整個宇宙都會為你讓路。'
+            },
+            {
+                icon: '🌺',
+                title: '綻放時刻',
+                message: '就像花朵在最適合的時節綻放，你的時刻也即將到來。不要著急，也不要與他人比較。每個人都有自己的節奏和時程。耐心培育自己，當時機成熟，你將綻放出最美的姿態。'
+            },
+            {
+                icon: '💎',
+                title: '內在寶藏',
+                message: '你正在發現自己的真正價值。那些經歷過的困難，都將你打磨成了一顆璀璨的寶石。認識到自己的珍貴，不要讓任何人低估你的價值。你比你想像的更加堅強、更加美麗。'
+            },
+            {
+                icon: '🌊',
+                title: '順流而行',
+                message: '生命如同河流，有時湍急，有時平緩。學會順應生命的流動，而不是對抗它。放下控制的需要，信任生命的安排。當你順流而行，一切都會變得輕鬆自然。'
+            },
+            {
+                icon: '☀️',
+                title: '光明降臨',
+                message: '黑暗即將過去，光明正在來臨。你所期待的突破就在前方。保持信念，繼續前進。太陽總會升起，為你帶來溫暖、希望和新的開始。你的耐心即將得到回報。'
+            },
+            {
+                icon: '🦢',
+                title: '優雅轉化',
+                message: '在平靜的外表下，你正在進行深刻的內在轉化。像天鵝一樣，展現優雅與從容。即使水面下雙腳努力划動，也要在世界面前保持美麗與尊嚴。你的優雅就是你的力量。'
+            },
+            {
+                icon: '🌱',
+                title: '新的開始',
+                message: '種子正在萌芽，新的生命週期已經開始。這是一個充滿無限可能的時刻。勇敢跨出第一步，即使方向還不完全清晰。每一個偉大的旅程都始於小小的開始。'
+            },
+            {
+                icon: '🎭',
+                title: '真實自我',
+                message: '是時候卸下面具，展現真實的自己了。不需要扮演任何角色來取悅他人。當你真誠地做自己時，你會吸引到真正欣賞你的人。真實是最美的力量。'
+            },
+            {
+                icon: '🌠',
+                title: '夢想成真',
+                message: '你的夢想比你想像的更接近實現。繼續保持信念，採取行動。宇宙正在為你安排一切。記住，夢想需要勇氣和行動的澆灌才能開花結果。'
+            },
+            {
+                icon: '🧘',
+                title: '內在平衡',
+                message: '在忙碌的生活中，找到內在的平衡點至關重要。給自己時間休息、反思和充電。平衡不是完美的五五分，而是知道何時該給予，何時該接受。'
+            },
+            {
+                icon: '🎨',
+                title: '創造力',
+                message: '你的創造力正在覺醒。不要害怕表達內在的靈感和想像。創造不僅是藝術，也是生活的方式。用創意的眼光看待問題，你會發現全新的解決方案。'
+            },
+            {
+                icon: '🌍',
+                title: '與世界連結',
+                message: '你是宇宙整體的一部分，與萬物相連。擴展你的視野，與世界建立更深的連結。你的存在對這個世界有著重要的意義，你的善意會產生漣漪效應。'
+            },
+            {
+                icon: '⚡',
+                title: '能量提升',
+                message: '你的振動頻率正在提升。感受到的能量波動是正常的。這是你進化的標誌。保持正面的思想和感受，你會吸引更多高頻的能量和機會。'
+            },
+            {
+                icon: '🎁',
+                title: '意外驚喜',
+                message: '生命正準備給你一個美好的驚喜。保持開放的心態，準備接受意想不到的禮物。有時候，最好的祝福來自最意外的方式。感恩即將到來的豐盛。'
+            },
+            {
+                icon: '🔮',
+                title: '神秘智慧',
+                message: '你正在接觸更深層的靈性智慧。對神秘事物保持好奇心和敬畏之心。不是所有事情都需要邏輯解釋，有些真理只能用心感受。相信你的靈性直覺。'
+            },
+            {
+                icon: '💝',
+                title: '無條件的愛',
+                message: '真正的愛是無條件的，不求回報的。學習無條件地愛自己和他人。這種愛會轉化你的生命，帶來深刻的療癒。愛是宇宙最強大的力量。'
+            },
+            {
+                icon: '🏔️',
+                title: '克服障礙',
+                message: '眼前的挑戰看似艱鉅，但你擁有攀越高山的力量。每一步都讓你更接近頂峰。記住，障礙不是阻止你前進，而是讓你變得更強大的機會。'
+            },
+            {
+                icon: '🎵',
+                title: '和諧共振',
+                message: '你的生命正在找到它的節奏和韻律。與宇宙的頻率和諧共振，一切都會變得順暢。聆聽內在的音樂，讓它引導你的每一個選擇和行動。'
+            },
+            {
+                icon: '🌿',
+                title: '自然療癒',
+                message: '大自然是最好的療癒師。花時間親近自然，讓大地的能量滋養你。在樹木、水流、陽光中找到平靜。自然會提醒你生命的簡單與美好。'
+            },
+            {
+                icon: '🔑',
+                title: '開啟之門',
+                message: '一扇新的門正在為你打開。你擁有開啟它的鑰匙，那就是你的勇氣和決心。不要害怕踏入未知的領域，門後是全新的可能性和機遇。'
+            },
+            {
+                icon: '⭐',
+                title: '命定之星',
+                message: '你的生命有其獨特的使命和意義。跟隨你的星辰，走上屬於你的道路。不要被他人的期待左右，相信你內在的指引。你的命運掌握在自己手中。'
+            }
+        ];
+
+        let shuffledCards = [];
+
+        function shuffleArray(array) {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        }
+
+        function startDrawing() {
+            // 洗牌
+            shuffledCards = shuffleArray(oracleCards);
+            
+            // 清空並重新生成牌卡
+            const container = document.getElementById('cardsContainer');
+            container.innerHTML = '';
+            
+            // 顯示所有30張牌
+            const numCards = 30;
+            const totalSpread = 180; // 總扇形角度
+            const startAngle = -totalSpread / 2; // 起始角度
+            
+            for (let i = 0; i < numCards; i++) {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.onclick = () => revealCard(i);
+                
+                // 計算扇形分布的角度（等間距）
+                const angle = startAngle + (totalSpread / (numCards - 1)) * i;
+                
+                // 儲存角度供 hover 使用
+                card.style.setProperty('--rotation', `${angle}deg`);
+                
+                // 設置牌卡的旋轉和位置
+                card.style.transform = `rotate(${angle}deg)`;
+                card.style.transformOrigin = 'center bottom';
+                
+                container.appendChild(card);
+            }
+            
+            document.getElementById('welcomeScreen').classList.add('hidden');
+            document.getElementById('cardSelection').classList.remove('hidden');
+        }
+
+        function revealCard(index) {
+            const card = shuffledCards[index];
+            document.getElementById('cardIcon').textContent = card.icon;
+            document.getElementById('cardTitle').textContent = card.title;
+            document.getElementById('cardMessage').textContent = card.message;
+            
+            document.getElementById('cardSelection').classList.add('hidden');
+            document.getElementById('cardReveal').classList.remove('hidden');
+        }
+
+        function resetCards() {
+            document.getElementById('cardReveal').classList.add('hidden');
+            document.getElementById('welcomeScreen').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
