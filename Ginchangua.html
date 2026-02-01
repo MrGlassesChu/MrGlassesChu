@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>靈龜金錢卦 | 六十甲子籤詳解版</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;500;700&display=swap');
+
+        :root {
+            --bg-color: #1a1816;
+            --text-gold: #cfa86e;
+            --text-dim: #8c867a;
+            --accent-red: #8a3324;
+            --coin-size: 80px;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            background-image: url("data:image/svg+xml,%3Csvg width='200' height='200' viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+            color: var(--text-gold);
+            font-family: 'Noto Serif TC', serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 480px;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            background: radial-gradient(circle at center, rgba(30, 25, 20, 0.95) 0%, rgba(0,0,0,1) 100%);
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+        }
+
+        /* --- 通用 UI --- */
+        h1, h2, h3 { text-align: center; font-weight: 700; letter-spacing: 2px; }
+        h1 { margin-top: 40px; font-size: 2rem; text-shadow: 0 2px 10px rgba(0,0,0,0.8); border-bottom: 1px solid var(--accent-red); padding-bottom: 15px; display: inline-block; align-self: center; color: #e6c88b; }
+        p { line-height: 1.8; text-align: justify; color: var(--text-dim); }
+
+        .btn {
+            background: linear-gradient(135deg, #b88a44 0%, #e6c88b 50%, #b88a44 100%);
+            border: none;
+            padding: 15px 40px;
+            color: #2b1d0e;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 20px auto;
+            display: block;
+            box-shadow: 0 4px 15px rgba(207, 168, 110, 0.3);
+            transition: transform 0.2s, box-shadow 0.2s, filter 0.2s;
+            font-family: 'Noto Serif TC', serif;
+            letter-spacing: 2px;
+            width: 80%;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn::after {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(255,255,255,0.2), transparent);
+            opacity: 0; transition: opacity 0.2s;
+        }
+        .btn:active { transform: scale(0.95); box-shadow: 0 2px 5px rgba(207, 168, 110, 0.2); }
+        .btn:active::after { opacity: 1; }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; filter: grayscale(0.8); pointer-events: none; }
+
+        /* --- 頁面切換 --- */
+        .view { display: none; flex-direction: column; align-items: center; flex: 1; opacity: 0; transition: opacity 0.5s ease-in-out; width: 100%; }
+        .view.active { display: flex; opacity: 1; }
+
+        /* --- 1. 首頁 --- */
+        .intro-decor {
+            width: 140px; height: 140px;
+            border: 2px solid var(--text-gold);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin: 40px 0;
+            box-shadow: 0 0 30px rgba(207, 168, 110, 0.1);
+            background: rgba(255, 255, 255, 0.02);
+        }
+        .bagua-symbol { font-size: 70px; opacity: 0.9; color: var(--text-gold); }
+
+        /* --- 2. 冥想頁 --- */
+        .meditation-circle {
+            width: 180px; height: 180px;
+            border: 1px solid rgba(207, 168, 110, 0.3);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin: 40px 0;
+            animation: breathe 4s infinite ease-in-out;
+            position: relative;
+        }
+        .meditation-circle::after {
+            content: ''; position: absolute; top: -15px; left: -15px; right: -15px; bottom: -15px;
+            border-radius: 50%; border: 1px dashed var(--text-gold); opacity: 0.3;
+            animation: spin 30s linear infinite;
+        }
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 15px rgba(207, 168, 110, 0.1); }
+            50% { transform: scale(1.05); box-shadow: 0 0 50px rgba(207, 168, 110, 0.4); }
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* --- 3. 擲幣區 --- */
+        .coins-area {
+            height: 220px; width: 100%;
+            display: flex; justify-content: center; align-items: center;
+            position: relative; perspective: 1000px; /* 增加透視感 */
+            margin-bottom: 20px;
+        }
+        .coin {
+            width: var(--coin-size); height: var(--coin-size);
+            position: absolute;
+            transform-style: preserve-3d;
+            will-change: transform; /* 優化效能 */
+        }
+        
+        /* 銅錢樣式 */
+        .coin-face {
+            position: absolute; width: 100%; height: 100%;
+            border-radius: 50%; backface-visibility: hidden;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: inset 0 0 8px rgba(0,0,0,0.8), 2px 4px 10px rgba(0,0,0,0.6);
+        }
+        .coin-front { /* 字面 (陽) */
+            background: radial-gradient(circle, #f3dba8 20%, #b88a44 90%);
+            border: 5px solid #8c6a28;
+            color: #3e2b14; font-weight: 800; font-size: 22px;
+        }
+        .coin-front::after { content: "乾隆\A通寶"; white-space: pre; text-align: center; line-height: 1.1; }
+        .coin-back { /* 花面 (陰) */
+            background: radial-gradient(circle, #f3dba8 20%, #b88a44 90%);
+            transform: rotateY(180deg);
+            border: 5px solid #8c6a28;
+        }
+        .coin-face::before {
+            content: ''; width: 22px; height: 22px; background: #1a1816;
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            box-shadow: inset 0 0 3px #000; border-radius: 2px;
+        }
+
+        .hexagram-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            width: 100%;
+        }
+
+        .hexagram-progress {
+            display: flex; flex-direction: column-reverse; /* 由下往上畫 */
+            gap: 8px;
+            height: 160px; width: 140px;
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 12px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 4px;
+        }
+        .line-slot {
+            width: 100%; height: 16px;
+            background: rgba(255,255,255,0.03);
+            display: flex; justify-content: space-between; align-items: center;
+            border-radius: 2px;
+        }
+        .yao { width: 100%; height: 100%; background: var(--text-gold); box-shadow: 0 0 8px rgba(207,168,110,0.6); border-radius: 2px; }
+        .yao.yin { background: transparent; display: flex; gap: 20%; box-shadow: none; }
+        .yao.yin span { width: 40%; height: 100%; background: var(--text-gold); box-shadow: 0 0 8px rgba(207,168,110,0.6); border-radius: 2px; }
+        
+        .toss-info { color: var(--text-dim); text-align: center; font-size: 0.9rem; margin-top: 10px; }
+
+        /* --- 4. 結果頁 (籤詩) --- */
+        .result-scroll-area {
+            width: 100%;
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            /* 自定義捲軸 */
+            scrollbar-width: thin;
+            scrollbar-color: var(--text-gold) transparent;
+        }
+        
+        .result-card {
+            background: #fff8eb;
+            color: #2b1d0e;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            position: relative;
+            margin: 10px 5px;
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0 L100 100 M100 0 L0 100' stroke='%23d4af37' stroke-width='0.5' opacity='0.05'/%3E%3C/svg%3E");
+        }
+        .result-card::before {
+            content: ''; position: absolute; top: 6px; left: 6px; right: 6px; bottom: 6px;
+            border: 2px solid #8a3324; pointer-events: none; border-radius: 4px;
+        }
+
+        .jiazi-header {
+            text-align: center; border-bottom: 1px solid rgba(138, 51, 36, 0.3);
+            padding-bottom: 15px; margin-bottom: 20px;
+        }
+        .hex-info { color: #8a3324; font-size: 0.85rem; letter-spacing: 1px; opacity: 0.8; margin-bottom: 5px; }
+        .jiazi-title { font-size: 2rem; color: #8a3324; font-weight: 800; }
+        .jiazi-luck { 
+            display: inline-block; background: #8a3324; color: #fff; 
+            padding: 2px 10px; font-size: 0.8rem; border-radius: 10px; margin-top: 5px; 
+        }
+
+        .poem-body {
+            font-size: 1.4rem; line-height: 1.5; text-align: center; font-weight: 700;
+            margin: 0 0 20px 0; color: #333;
+            font-family: 'Noto Serif TC', serif;
+        }
+
+        .detail-section {
+            font-size: 1rem; text-align: left; margin-top: 15px;
+            border-top: 1px dashed rgba(138, 51, 36, 0.3); padding-top: 15px;
+        }
+        .detail-title { font-weight: bold; color: #8a3324; margin-bottom: 5px; display: block; font-size: 1.1rem; }
+        .detail-content { margin-bottom: 15px; color: #444; line-height: 1.6; }
+        
+        .list-item { display: flex; margin-bottom: 6px; font-size: 0.95rem; }
+        .list-label { color: #8a3324; font-weight: bold; min-width: 45px; }
+        .list-val { flex: 1; }
+
+        /* 動畫 Classes */
+        .tossing .coin { animation: flipCoin 1.2s ease-out forwards; }
+        
+        @keyframes flipCoin {
+            0% { transform: translateY(0) rotateX(0); }
+            10% { transform: translateY(-50px) rotateX(0); }
+            50% { transform: translateY(-200px) rotateX(720deg) rotateZ(20deg); }
+            100% { transform: translateY(0) rotateX(1440deg); } /* JS 會覆蓋結束角度 */
+        }
+        
+        .fade-in { animation: fadeIn 0.8s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="view-intro" class="view active">
+        <h1>靈龜金錢卦</h1>
+        <div class="intro-decor">
+            <span class="bagua-symbol">☯</span>
+        </div>
+        <p style="text-align: center;">誠心誠意，占卜吉凶。<br>六十甲子，指點迷津。</p>
+        <p style="font-size: 0.9rem; text-align: center; margin-top: 20px; opacity: 0.7;">
+            請保持心境平和，默念所求之事。<br>準備好後點擊下方按鈕。
+        </p>
+        <button class="btn" onclick="goToMeditation()">開始卜卦</button>
+    </div>
+
+    <div id="view-meditation" class="view">
+        <h2>靜心冥想</h2>
+        <div class="meditation-circle">
+            <span style="font-size: 2.5rem; font-weight: 300;">誠</span>
+        </div>
+        <p style="text-align: center; max-width: 80%;">
+            深呼吸，屏除雜念。<br><br>
+            心中默念：<br>
+            <span style="color:var(--text-gold)">姓名、生辰、住址</span><br>
+            以及<span style="color:var(--text-gold)">想詢問的事情</span>。
+        </p>
+        <button class="btn" onclick="startDivination()">心誠則靈，開始</button>
+    </div>
+
+    <div id="view-toss" class="view">
+        <h3 id="step-title">第一爻</h3>
+        <div class="coins-area" id="coins-area">
+            <div class="coin" id="c1" style="left: 20%;">
+                <div class="coin-face coin-front"></div>
+                <div class="coin-face coin-back"></div>
+            </div>
+            <div class="coin" id="c2" style="left: 42%;">
+                <div class="coin-face coin-front"></div>
+                <div class="coin-face coin-back"></div>
+            </div>
+            <div class="coin" id="c3" style="left: 64%;">
+                <div class="coin-face coin-front"></div>
+                <div class="coin-face coin-back"></div>
+            </div>
+        </div>
+        
+        <div class="hexagram-container">
+            <div class="hexagram-progress" id="hexagram-lines">
+                <div class="line-slot" id="line-5"></div>
+                <div class="line-slot" id="line-4"></div>
+                <div class="line-slot" id="line-3"></div>
+                <div class="line-slot" id="line-2"></div>
+                <div class="line-slot" id="line-1"></div>
+                <div class="line-slot" id="line-0"></div>
+            </div>
+        </div>
+        <div class="toss-info">已完成 <span id="current-yao" style="color:#fff;">0</span> / 6 爻</div>
+
+        <button class="btn" id="toss-btn" onclick="tossCoins()">擲 幣</button>
+    </div>
+
+    <div id="view-result" class="view">
+        <h2 style="margin-top: 10px; margin-bottom: 10px;">卜卦結果</h2>
+        <div class="result-scroll-area">
+            <div class="result-card fade-in">
+                <div class="jiazi-header">
+                    <div class="hex-info" id="hex-name">卦象索引</div>
+                    <div class="jiazi-title" id="jiazi-name">甲子</div>
+                    <div class="jiazi-luck" id="jiazi-luck">上吉</div>
+                </div>
+                
+                <div class="poem-body" id="poem-content">
+                    詩句內容載入中...
+                </div>
+
+                <div class="detail-section">
+                    <span class="detail-title">【白話詩意】</span>
+                    <div class="detail-content" id="poem-meaning">
+                        解釋載入中...
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <span class="detail-title">【解曰】</span>
+                    <div class="detail-content" id="poem-general">
+                        整體運勢說明...
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <span class="detail-title">【聖意詳解】</span>
+                    <div class="detail-content" id="poem-details">
+                        </div>
+                </div>
+            </div>
+        </div>
+        <button class="btn" onclick="resetApp()">再卜一卦</button>
+    </div>
+</div>
+
+<script>
+    /* --- 資料結構：六十甲子籤詳解 (範例 + 通用模板) --- */
+    // 為了檔案大小與範例展示，這裡列出頭幾首詳細版，其餘使用通用生成邏輯
+    // 實際產品可將完整60首填入此陣列
+    const jiaziDB = [
+        {
+            t: "甲子", l: "大吉",
+            p: "日出便見風雲散，<br>光明清淨照世間，<br>一向前途通大道，<br>萬事清吉保平安。",
+            m: "太陽出來了，遮蔽天空的烏雲隨風而散，陽光普照大地，世界恢復了光明與清淨。此去前途就像走在康莊大道上一樣，會一路順暢，所有的事都會平安吉祥。",
+            g: "運勢如旭日東昇，過去的陰霾與困難將一掃而空。這是一支非常吉利的籤，代表新的開始、新的希望，只要正道而行，前途不可限量。",
+            d: [
+                {k: "工作", v: "發展順利，有升遷或被重用的機會，過去的阻礙消除。"},
+                {k: "感情", v: "雙方誤會冰釋，感情升溫；單身者有機會遇到良緣。"},
+                {k: "財運", v: "財源廣進，投資理財方向正確，會有不錯的收穫。"},
+                {k: "疾病", v: "病情好轉，遇到良醫，不必過於擔心。"},
+                {k: "訴訟", v: "理直氣壯，終能獲得平反或勝訴。"}
+            ]
+        },
+        {
+            t: "乙丑", l: "中吉",
+            p: "雲開月出正分明，<br>不須進退問前程，<br>婚姻皆由天註定，<br>和合清吉萬事成。",
+            m: "雲霧散開，明月當空，一切都看得清清楚楚。你不必猶豫不決，也不用再問前程如何，因為未來的路已經很明確了。姻緣天注定，順其自然就能圓滿。",
+            g: "時機已經成熟，事情的真相或結果已經顯現，不需要再三心二意。這首籤詩強調「順勢而為」，不要強求，也不要過度擔憂，一切自有安排。",
+            d: [
+                {k: "謀事", v: "目標明確，只要堅持下去，自然會成功。"},
+                {k: "婚姻", v: "是天賜良緣，雖然可能有小波折，但終成眷屬。"},
+                {k: "求財", v: "財運平穩，適合穩健的投資，不宜投機。"},
+                {k: "考試", v: "金榜題名有望，成績會比預期好。"},
+                {k: "尋人", v: "不用刻意去尋找，過一段時間自然會有消息。"}
+            ]
+        },
+        {
+            t: "丙寅", l: "中平",
+            p: "財中漸漸見分明，<br>花開花謝結子成，<br>寬心且看月中桂，<br>郎君即便見太平。",
+            m: "財運的好壞會慢慢變得清楚。就像花開花謝之後才會結出果實一樣，需要時間等待成果。放寬心等待中秋（或月圓）時節，那時局勢就會穩定下來。",
+            g: "這是一支「先苦後甘」的籤。目前可能還看不到具體的成果，或者還在耕耘階段，但不要著急，到了特定的時間點（如秋天、下半月），事情就會圓滿。",
+            d: [
+                {k: "事業", v: "起頭難，但堅持下去會有收穫，大器晚成型。"},
+                {k: "感情", v: "若有波折，請多點耐心，月圓之時關係會好轉。"},
+                {k: "錢財", v: "目前不宜急躁求財，慢慢累積，將來會有積蓄。"},
+                {k: "健康", v: "慢性病需長時間調養，不會立即痊癒但會漸漸改善。"},
+                {k: "外出", v: "稍安勿躁，暫時不宜遠行，等待時機。"}
+            ]
+        },
+        {
+            t: "丁卯", l: "下下",
+            p: "前途功名未得意，<br>只恐命內有交加，<br>兩家必定防損失，<br>勸君且退莫咨嗟。",
+            m: "目前的功名事業還不能如意，恐怕是因為命運中有些坎坷交錯。為了避免雙方都受到損失，勸你暫時退守，不要為了目前的困境而嘆息。",
+            g: "運勢處於低谷，強求反而會招致更大的損失。此時宜守不宜進，最好的策略是「退一步海闊天空」，保留實力，等待壞運氣過去。",
+            d: [
+                {k: "創業", v: "時機不對，風險極大，建議暫緩或尋求他人意見。"},
+                {k: "感情", v: "容易發生口角或意見不合，宜冷靜處理，不宜強求。"},
+                {k: "投資", v: "恐有虧損，切勿貪圖高利，保守為上。"},
+                {k: "官司", v: "不利，最好能私下和解，否則兩敗俱傷。"},
+                {k: "轉換", v: "不宜換工作或搬家，目前維持現狀較安全。"}
+            ]
+        }
+        // ... (這裡可以繼續擴充至癸亥)
+    ];
+
+    /* --- 輔助生成器 (處理未填滿的籤詩) --- */
+    const stems = ["甲","乙","丙","丁","戊","己","庚","辛","壬","癸"];
+    const branches = ["子","丑","寅","卯","辰","巳","午","未","申","酉","戌","亥"];
+    
+    function getJiaziFullData(index) {
+        if (index < jiaziDB.length) {
+            return jiaziDB[index];
+        }
+        // 若超出範例資料庫，自動生成通用吉籤內容 (防止報錯)
+        let stem = stems[index % 10];
+        let branch = branches[index % 12];
+        return {
+            t: stem + branch,
+            l: "中吉",
+            p: "風恬浪靜可行舟，<br>恰是中秋月一輪，<br>凡事不須多憂慮，<br>福祿自有慶家門。",
+            m: "風平浪靜，正是行船的好時機。就像中秋節明亮的月亮一樣圓滿。凡事不需要太過憂慮，福氣和俸祿自然會來到家門口。",
+            g: "運勢平穩向上，如同順水行舟。這是一支安穩的籤，表示目前的狀況良好，只要保持正直和善念，自然會有好結果。",
+            d: [
+                {k: "願望", v: "只要心存善念，多半能如願以償。"},
+                {k: "家運", v: "平安和樂，喜氣洋洋。"},
+                {k: "事業", v: "平穩發展，無大風大浪。"},
+                {k: "感情", v: "關係穩定，細水長流。"},
+                {k: "健康", v: "身心安泰，注意保養即可。"}
+            ]
+        };
+    }
+
+    /* --- 應用程式狀態變數 --- */
+    let currentLine = 0;
+    let hexagramLines = []; // 0 = Yin (--), 1 = Yang (—)
+    let isTossing = false;
+
+    /* --- 頁面導航 --- */
+    function switchView(viewId) {
+        document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+        // 小延遲確保淡出動畫
+        setTimeout(() => {
+            document.getElementById(viewId).classList.add('active');
+        }, 100);
+    }
+
+    function goToMeditation() {
+        switchView('view-meditation');
+    }
+
+    function startDivination() {
+        // --- 修正 BUG 關鍵：完全重置狀態 ---
+        currentLine = 0;
+        hexagramLines = [];
+        isTossing = false; // 強制重置鎖
+        
+        // 清空畫面上的爻線
+        document.querySelectorAll('.line-slot').forEach(el => el.innerHTML = '');
+        document.getElementById('current-yao').innerText = '0';
+        document.getElementById('step-title').innerText = '第一爻 (初爻)';
+        
+        const btn = document.getElementById('toss-btn');
+        btn.disabled = false;
+        btn.innerText = "擲 幣";
+
+        switchView('view-toss');
+    }
+
+    /* --- 核心邏輯：擲幣 --- */
+    function tossCoins() {
+        if (isTossing || currentLine >= 6) return; // 雙重保險
+        isTossing = true;
+        
+        const btn = document.getElementById('toss-btn');
+        btn.disabled = true;
+        btn.innerText = "誠心感應中...";
+
+        // 模擬機率 (True=字/陽/3, False=花/陰/2)
+        const coins = [Math.random() > 0.5, Math.random() > 0.5, Math.random() > 0.5];
+        
+        const coinEls = [document.getElementById('c1'), document.getElementById('c2'), document.getElementById('c3')];
+        
+        // 震動反饋
+        if(navigator.vibrate) navigator.vibrate([50, 30, 50]);
+
+        coinEls.forEach((el, index) => {
+            // --- 修正 BUG 關鍵：在開始新動畫前，清除之前的 Transform ---
+            // 這能防止第二局時硬幣「卡在」上一局的結束位置
+            el.style.transform = ''; 
+            el.style.animation = 'none';
+            
+            // 強制 Reflow (讓瀏覽器意識到動畫被重置)
+            void el.offsetHeight;
+            
+            // 重新套用動畫
+            // 每個硬幣稍微錯開時間 0.1s
+            el.style.animation = `flipCoin 1.2s ease-out forwards ${index * 0.1}s`;
+            
+            // 計算最終角度
+            const isYang = coins[index];
+            // 基礎圈數 + 隨機圈數
+            const rotations = 4 + Math.floor(Math.random() * 3); 
+            // 陽面(字)是正面(0deg)，陰面(花)是背面(180deg)
+            // 這裡設定 CSS 預設是字面朝上
+            const finalRotateX = (rotations * 360) + (isYang ? 0 : 180);
+            const randomZ = Math.floor(Math.random() * 90) - 45; // 隨機歪斜
+            const randomY = Math.floor(Math.random() * 20) - 10; // 微幅 Y 軸偏轉
+            
+            // 等待動畫時間結束後，固定位置
+            setTimeout(() => {
+                // 清除 animation 屬性以免干擾，直接定格在最終位置
+                el.style.animation = 'none';
+                el.style.transform = `translateY(0) rotateX(${finalRotateX}deg) rotateZ(${randomZ}deg) rotateY(${randomY}deg)`;
+            }, 1200 + (index * 100));
+        });
+
+        // 計算該爻結果
+        let sum = 0;
+        coins.forEach(c => sum += (c ? 3 : 2));
+        
+        // 畫卦邏輯：奇數和(7,9)為陽(—)，偶數和(6,8)為陰(--)
+        let isLineYang = (sum % 2 !== 0); 
+        
+        // 等待動畫完全結束後顯示爻線
+        setTimeout(() => {
+            recordLine(isLineYang, currentLine);
+            currentLine++;
+            
+            if (currentLine < 6) {
+                isTossing = false; // 解鎖
+                btn.disabled = false;
+                btn.innerText = "擲 幣";
+                const yaoNames = ["初", "二", "三", "四", "五", "上"];
+                document.getElementById('step-title').innerText = `第${yaoNames[currentLine]}爻`;
+                document.getElementById('current-yao').innerText = currentLine;
+            } else {
+                btn.innerText = "卦象已成";
+                setTimeout(showResult, 1200);
+            }
+        }, 1600);
+    }
+
+    function recordLine(isYang, index) {
+        hexagramLines[index] = isYang ? 1 : 0;
+        
+        // 找到對應的 slot
+        const slot = document.getElementById(`line-${index}`);
+        if(!slot) return; // 安全檢查
+
+        const lineEl = document.createElement('div');
+        lineEl.className = isYang ? 'yao' : 'yao yin';
+        if (!isYang) {
+            lineEl.innerHTML = '<span></span><span></span>';
+        }
+        
+        lineEl.style.opacity = 0;
+        slot.appendChild(lineEl);
+        
+        // 淡入
+        requestAnimationFrame(() => {
+            lineEl.style.transition = 'opacity 0.5s ease';
+            lineEl.style.opacity = 1;
+        });
+    }
+
+    /* --- 結果計算與顯示 --- */
+    function showResult() {
+        // 二進制轉十進制 (0-63)
+        let hexIndex = 0;
+        for(let i=0; i<6; i++) {
+            if(hexagramLines[i] === 1) {
+                hexIndex += Math.pow(2, i);
+            }
+        }
+
+        // 對應六十甲子
+        let poemIndex = hexIndex % 60;
+        const data = getJiaziFullData(poemIndex);
+        
+        // 填充 UI
+        document.getElementById('hex-name').innerText = `【本卦：${hexIndex + 1} / 64】`;
+        document.getElementById('jiazi-name').innerText = data.t + " 籤";
+        document.getElementById('jiazi-luck').innerText = data.l;
+        document.getElementById('jiazi-luck').style.backgroundColor = getLuckColor(data.l);
+        
+        document.getElementById('poem-content').innerHTML = data.p;
+        document.getElementById('poem-meaning').innerHTML = data.m;
+        document.getElementById('poem-general').innerHTML = data.g;
+
+        // 生成詳細列表
+        const detailsContainer = document.getElementById('poem-details');
+        detailsContainer.innerHTML = ''; // 清空舊內容
+        
+        data.d.forEach(item => {
+            let row = document.createElement('div');
+            row.className = 'list-item';
+            row.innerHTML = `<span class="list-label">【${item.k}】</span><span class="list-val">${item.v}</span>`;
+            detailsContainer.appendChild(row);
+        });
+
+        switchView('view-result');
+    }
+
+    function getLuckColor(luck) {
+        if(luck.includes('吉')) return '#8a3324'; // 紅
+        if(luck.includes('平')) return '#8c6a28'; // 褐
+        if(luck.includes('凶') || luck.includes('下')) return '#333'; // 黑
+        return '#8a3324';
+    }
+
+    function resetApp() {
+        // 重置硬幣位置 (視覺上歸位)
+        const coinEls = [document.getElementById('c1'), document.getElementById('c2'), document.getElementById('c3')];
+        coinEls.forEach(el => {
+            el.style.transition = 'transform 0.5s ease';
+            el.style.transform = 'translateY(0) rotateX(0) rotateZ(0)';
+        });
+        
+        // 回首頁
+        switchView('view-intro');
+    }
+
+    // 防止 iOS Safari 橡皮筋捲動效果，但允許內部區塊捲動
+    document.body.addEventListener('touchmove', function(e) {
+        // 如果目標在可捲動區域內，不阻止
+        if(e.target.closest('.result-scroll-area')) return;
+        e.preventDefault();
+    }, { passive: false });
+
+</script>
+</body>
+</html>
