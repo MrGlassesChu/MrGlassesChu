@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>暗棋遊戲 - 翻翻棋</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'KaiTi', '楷體', serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px;
+            color: #f0e6d2;
+        }
+
+        .header {
+            text-align: center;
+            margin: 15px 0;
+        }
+
+        .title {
+            font-size: clamp(24px, 6vw, 36px);
+            color: #ffd700;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
+            font-weight: bold;
+            letter-spacing: 3px;
+        }
+
+        .subtitle {
+            font-size: clamp(12px, 3vw, 16px);
+            color: #f0e6d2;
+            margin-top: 5px;
+            opacity: 0.9;
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            max-width: 500px;
+            margin: 15px 0;
+            padding: 15px;
+            background: rgba(139, 69, 19, 0.3);
+            border: 2px solid #8b4513;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        }
+
+        .player-info {
+            text-align: center;
+            flex: 1;
+            padding: 5px;
+        }
+
+        .player-info.active {
+            background: rgba(255, 215, 0, 0.2);
+            border-radius: 8px;
+            border: 2px solid #ffd700;
+        }
+
+        .player-name {
+            font-size: clamp(14px, 3.5vw, 18px);
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .red-player {
+            color: #ff4444;
+        }
+
+        .black-player {
+            color: #333;
+            text-shadow: 0 0 2px #fff;
+        }
+
+        .board-container {
+            background: linear-gradient(145deg, #8b4513, #654321);
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+            border: 3px solid #d4af37;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            background: #2c1810;
+            padding: 10px;
+            border-radius: 10px;
+            max-width: 500px;
+            aspect-ratio: 1;
+        }
+
+        .cell {
+            aspect-ratio: 1;
+            background: linear-gradient(145deg, #d4a574, #c19a6b);
+            border: 2px solid #8b6f47;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(20px, 5vw, 32px);
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+            position: relative;
+            user-select: none;
+        }
+
+        .cell::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 70%;
+            height: 70%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1), transparent);
+            border-radius: 50%;
+        }
+
+        .cell.covered {
+            background: linear-gradient(145deg, #8b4513, #654321);
+            border: 2px solid #d4af37;
+            color: #ffd700;
+            font-size: clamp(16px, 4vw, 24px);
+        }
+
+        .cell.covered::after {
+            content: '翻';
+            position: relative;
+            z-index: 1;
+        }
+
+        .cell.red {
+            color: #ff0000;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .cell.black {
+            color: #000;
+            text-shadow: 1px 1px 3px rgba(255, 255, 255, 0.5);
+        }
+
+        .cell.selected {
+            background: linear-gradient(145deg, #ffd700, #ffed4e);
+            border: 3px solid #ff6b6b;
+            transform: scale(0.95);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+        }
+
+        .cell.movable {
+            border: 3px solid #4ecca3;
+            animation: pulse 1s infinite;
+        }
+
+        .cell:active {
+            transform: scale(0.92);
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: 0 0 10px rgba(78, 204, 163, 0.5);
+            }
+            50% {
+                box-shadow: 0 0 20px rgba(78, 204, 163, 1);
+            }
+        }
+
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            font-size: clamp(14px, 3.5vw, 18px);
+            font-family: 'KaiTi', '楷體', serif;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-primary {
+            background: linear-gradient(145deg, #ff6b6b, #ee5a6f);
+            color: white;
+            border: 2px solid #d4af37;
+        }
+
+        .btn-primary:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .message {
+            margin-top: 15px;
+            padding: 12px 20px;
+            background: rgba(139, 69, 19, 0.4);
+            border: 2px solid #d4af37;
+            border-radius: 8px;
+            font-size: clamp(14px, 3.5vw, 18px);
+            text-align: center;
+            min-height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffd700;
+        }
+
+        .rules {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            max-width: 500px;
+            font-size: clamp(12px, 3vw, 14px);
+            line-height: 1.6;
+        }
+
+        .rules h3 {
+            color: #ffd700;
+            margin-bottom: 10px;
+            font-size: clamp(14px, 3.5vw, 18px);
+        }
+
+        .rules ul {
+            list-style-position: inside;
+            color: #f0e6d2;
+        }
+
+        .rules li {
+            margin: 5px 0;
+        }
+
+        @media (max-width: 400px) {
+            .board {
+                gap: 6px;
+                padding: 8px;
+            }
+            
+            .board-container {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="title">🀄 暗棋遊戲 🀄</div>
+        <div class="subtitle">翻翻棋 - 象棋暗棋</div>
+    </div>
+
+    <div class="game-info">
+        <div class="player-info" id="redPlayer">
+            <div class="player-name red-player">紅方</div>
+            <div class="piece-count">剩餘: <span id="redCount">16</span></div>
+        </div>
+        <div class="player-info" id="blackPlayer">
+            <div class="player-name black-player">黑方</div>
+            <div class="piece-count">剩餘: <span id="blackCount">16</span></div>
+        </div>
+    </div>
+
+    <div class="board-container">
+        <div class="board" id="board"></div>
+    </div>
+
+    <div class="message" id="message">點擊「開始遊戲」</div>
+
+    <div class="controls">
+        <button class="btn btn-primary" onclick="startGame(false)">雙人對戰</button>
+        <button class="btn btn-primary" onclick="startGame(true)">人機對戰</button>
+    </div>
+
+    <div class="rules">
+        <h3>遊戲規則</h3>
+        <ul>
+            <li>棋子由大到小：將帥 > 士仕 > 象相 > 車俥 > 馬傌 > 砲炮 > 兵卒</li>
+            <li>特殊規則：兵卒可以吃將帥</li>
+            <li><strong>砲炮特殊規則：只能隔一個棋子（已翻開）吃子，不能吃相鄰的棋子</strong></li>
+            <li>砲炮沒有隔子時只能移動，不能吃子</li>
+            <li>其他棋子只能吃相鄰的敵方棋子</li>
+            <li>相同棋子可以互吃</li>
+            <li>翻開棋子後該方顏色確定，只能移動自己的棋子</li>
+            <li>消滅對方所有棋子即可獲勝</li>
+        </ul>
+    </div>
+
+    <script>
+        const pieces = {
+            '將': 7, '帥': 7,
+            '士': 6, '仕': 6,
+            '象': 5, '相': 5,
+            '車': 4, '俥': 4,
+            '馬': 3, '傌': 3,
+            '砲': 2, '炮': 2,
+            '兵': 1, '卒': 1
+        };
+
+        const redPieces = ['帥', '仕', '仕', '相', '相', '俥', '俥', '傌', '傌', '炮', '炮', '兵', '兵', '兵', '兵', '兵'];
+        const blackPieces = ['將', '士', '士', '象', '象', '車', '車', '馬', '馬', '砲', '砲', '卒', '卒', '卒', '卒', '卒'];
+
+        let board = [];
+        let selectedCell = null;
+        let currentPlayer = 'red';
+        let redColor = null;
+        let blackColor = null;
+        let gameStarted = false;
+        let isAIMode = false;
+        let aiPlayer = 'black';
+
+        function startGame(aiMode = false) {
+            board = [];
+            selectedCell = null;
+            currentPlayer = 'red';
+            redColor = null;
+            blackColor = null;
+            gameStarted = true;
+            isAIMode = aiMode;
+            aiPlayer = 'black';
+
+            const allPieces = [...redPieces, ...blackPieces];
+            
+            for (let i = allPieces.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [allPieces[i], allPieces[j]] = [allPieces[j], allPieces[i]];
+            }
+
+            for (let i = 0; i < 16; i++) {
+                board[i] = {
+                    piece: allPieces[i],
+                    revealed: false,
+                    color: redPieces.includes(allPieces[i]) ? 'red' : 'black'
+                };
+            }
+
+            updateMessage(isAIMode ? '人機對戰 - 你是紅方，請翻開棋子' : '紅方回合 - 請翻開棋子');
+            renderBoard();
+            updatePlayerInfo();
+        }
+
+        function renderBoard() {
+            const boardElement = document.getElementById('board');
+            boardElement.innerHTML = '';
+
+            for (let i = 0; i < 16; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.dataset.index = i;
+
+                if (board[i]) {
+                    if (board[i].revealed) {
+                        cell.textContent = board[i].piece;
+                        cell.classList.add(board[i].color);
+                    } else {
+                        cell.classList.add('covered');
+                    }
+                } else {
+                    cell.classList.add('empty');
+                }
+
+                cell.onclick = () => handleCellClick(i);
+                boardElement.appendChild(cell);
+            }
+        }
+
+        function handleCellClick(index) {
+            if (!gameStarted) {
+                updateMessage('請先開始遊戲');
+                return;
+            }
+
+            // 在 AI 模式下，如果是 AI 的回合，玩家不能操作
+            if (isAIMode && currentPlayer === aiPlayer) {
+                return;
+            }
+
+            if (!board[index]) {
+                if (selectedCell !== null && board[selectedCell] && board[selectedCell].revealed) {
+                    if (canMove(selectedCell, index)) {
+                        moveOrEat(selectedCell, index);
+                    }
+                }
+                return;
+            }
+
+            if (!board[index].revealed) {
+                board[index].revealed = true;
+                
+                if (redColor === null) {
+                    redColor = board[index].color;
+                    blackColor = board[index].color === 'red' ? 'black' : 'red';
+                }
+                
+                switchPlayer();
+                renderBoard();
+                updatePlayerInfo();
+                checkWin();
+                return;
+            }
+
+            const playerColor = currentPlayer === 'red' ? redColor : blackColor;
+
+            if (selectedCell === null) {
+                if (board[index].color === playerColor) {
+                    selectedCell = index;
+                    highlightMoves(index);
+                    updateMessage(`已選擇 ${board[index].piece}`);
+                }
+            } else {
+                if (index === selectedCell) {
+                    selectedCell = null;
+                    renderBoard();
+                    updateMessage(`${currentPlayer === 'red' ? '紅方' : '黑方'}回合`);
+                } else if (board[index].color === playerColor) {
+                    selectedCell = index;
+                    highlightMoves(index);
+                    updateMessage(`已選擇 ${board[index].piece}`);
+                } else {
+                    if (canEat(selectedCell, index)) {
+                        moveOrEat(selectedCell, index);
+                    } else {
+                        updateMessage('無法吃掉此棋子');
+                    }
+                }
+            }
+        }
+
+        function highlightMoves(index) {
+            renderBoard();
+            const cells = document.querySelectorAll('.cell');
+            cells[index].classList.add('selected');
+
+            for (let i = 0; i < 16; i++) {
+                if (canMove(index, i) || canEat(index, i)) {
+                    cells[i].classList.add('movable');
+                }
+            }
+        }
+
+        function canMove(from, to) {
+            if (!board[from] || board[to]) return false;
+            
+            const diff = Math.abs(from - to);
+            return diff === 1 && Math.floor(from / 4) === Math.floor(to / 4) || diff === 4;
+        }
+
+        function canEat(from, to) {
+            if (!board[from] || !board[to] || !board[to].revealed) return false;
+            if (board[from].color === board[to].color) return false;
+
+            const diff = Math.abs(from - to);
+            const isAdjacent = (diff === 1 && Math.floor(from / 4) === Math.floor(to / 4)) || diff === 4;
+
+            const fromPiece = board[from].piece;
+            const toPiece = board[to].piece;
+
+            // 砲炮的特殊規則：只能隔子吃，不能吃相鄰的棋子
+            if (fromPiece === '砲' || fromPiece === '炮') {
+                if (isAdjacent) {
+                    // 砲不能吃相鄰的棋子
+                    return false;
+                } else {
+                    // 必須隔一個棋子才能吃
+                    return canCannonEat(from, to);
+                }
+            }
+
+            // 其他棋子只能吃相鄰的
+            if (!isAdjacent) {
+                return false;
+            }
+
+            // 兵卒吃將帥的特殊規則
+            if ((fromPiece === '兵' || fromPiece === '卒') && (toPiece === '將' || toPiece === '帥')) {
+                return true;
+            }
+
+            return pieces[fromPiece] >= pieces[toPiece];
+        }
+
+        function canCannonEat(from, to) {
+            const fromPiece = board[from].piece;
+            if (fromPiece !== '砲' && fromPiece !== '炮') return false;
+
+            const diff = to - from;
+            let step;
+
+            if (Math.abs(diff) === 1 || Math.floor(from / 4) !== Math.floor(to / 4)) {
+                if (Math.abs(diff) % 4 !== 0) return false;
+                step = diff > 0 ? 4 : -4;
+            } else {
+                step = diff > 0 ? 1 : -1;
+            }
+
+            let count = 0;
+            let current = from + step;
+
+            while (current !== to) {
+                if (board[current] && board[current].revealed) {
+                    count++;
+                }
+                current += step;
+            }
+
+            return count === 1;
+        }
+
+        function moveOrEat(from, to) {
+            if (board[to]) {
+                updateMessage(`${board[from].piece} 吃掉 ${board[to].piece}`);
+            }
+
+            board[to] = board[from];
+            board[from] = null;
+            selectedCell = null;
+
+            switchPlayer();
+            renderBoard();
+            updatePlayerInfo();
+            checkWin();
+        }
+
+        function switchPlayer() {
+            currentPlayer = currentPlayer === 'red' ? 'black' : 'red';
+            updateMessage(`${currentPlayer === 'red' ? '紅方' : '黑方'}回合`);
+            
+            document.getElementById('redPlayer').classList.toggle('active', currentPlayer === 'red');
+            document.getElementById('blackPlayer').classList.toggle('active', currentPlayer === 'black');
+
+            // 如果是 AI 模式且輪到 AI，則執行 AI 回合
+            if (isAIMode && currentPlayer === aiPlayer && gameStarted) {
+                setTimeout(aiTurn, 800);
+            }
+        }
+
+        function updateMessage(msg) {
+            document.getElementById('message').textContent = msg;
+        }
+
+        function updatePlayerInfo() {
+            let redCount = 0;
+            let blackCount = 0;
+
+            board.forEach(cell => {
+                if (cell) {
+                    if (cell.color === 'red') redCount++;
+                    else blackCount++;
+                }
+            });
+
+            document.getElementById('redCount').textContent = redCount;
+            document.getElementById('blackCount').textContent = blackCount;
+        }
+
+        function aiTurn() {
+            try {
+                if (!gameStarted) return;
+
+                const aiColor = currentPlayer === 'red' ? redColor : blackColor;
+                const enemyColor = aiColor === 'red' ? 'black' : 'red';
+
+                // 1. 收集所有可能的行動
+                const possibleMoves = [];
+
+                // 翻開未翻開的棋子
+                for (let i = 0; i < 16; i++) {
+                    if (board[i] && !board[i].revealed) {
+                        const revealPriority = calculateRevealPriority(i, aiColor);
+                        possibleMoves.push({ type: 'reveal', index: i, priority: revealPriority });
+                    }
+                }
+
+                // 如果顏色已確定，收集移動和吃子選項
+                if (aiColor) {
+                    for (let i = 0; i < 16; i++) {
+                        if (board[i] && board[i].revealed && board[i].color === aiColor) {
+                            // 檢查可以吃的棋子
+                            for (let j = 0; j < 16; j++) {
+                                if (board[j] && board[j].revealed && canEat(i, j)) {
+                                    const priority = calculateEatPriority(i, j, aiColor);
+                                    possibleMoves.push({ 
+                                        type: 'eat', 
+                                        from: i, 
+                                        to: j, 
+                                        priority: priority 
+                                    });
+                                }
+                            }
+
+                            // 檢查可以移動的位置
+                            for (let j = 0; j < 16; j++) {
+                                if (canMove(i, j)) {
+                                    const priority = calculateMovePriority(i, j, aiColor);
+                                    possibleMoves.push({ 
+                                        type: 'move', 
+                                        from: i, 
+                                        to: j, 
+                                        priority: priority 
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (possibleMoves.length === 0) {
+                    updateMessage('AI 無法行動，遊戲結束');
+                    gameStarted = false;
+                    return;
+                }
+
+                // 2. 按優先級排序
+                possibleMoves.sort((a, b) => b.priority - a.priority);
+                
+                // 找出所有吃子行動
+                const eatMoves = possibleMoves.filter(m => m.type === 'eat');
+                
+                let bestMove;
+                
+                // 如果有吃子機會，優先考慮吃子（只在最高優先級的吃子中隨機）
+                if (eatMoves.length > 0) {
+                    const maxEatPriority = eatMoves[0].priority;
+                    const topEatMoves = eatMoves.filter(m => m.priority >= maxEatPriority - 5);
+                    bestMove = topEatMoves[Math.floor(Math.random() * topEatMoves.length)];
+                } else {
+                    // 沒有吃子機會時，在前幾個好選項中隨機
+                    const topMoves = possibleMoves.slice(0, Math.max(1, Math.ceil(possibleMoves.length * 0.2)));
+                    bestMove = topMoves[Math.floor(Math.random() * topMoves.length)];
+                }
+
+                // 3. 執行選中的行動
+                if (bestMove.type === 'reveal') {
+                    board[bestMove.index].revealed = true;
+                    
+                    if (redColor === null) {
+                        redColor = board[bestMove.index].color;
+                        blackColor = board[bestMove.index].color === 'red' ? 'black' : 'red';
+                    }
+                    
+                    updateMessage(`AI 翻開了 ${board[bestMove.index].piece}`);
+                } else if (bestMove.type === 'eat') {
+                    updateMessage(`AI 的 ${board[bestMove.from].piece} 吃掉 ${board[bestMove.to].piece}`);
+                    board[bestMove.to] = board[bestMove.from];
+                    board[bestMove.from] = null;
+                } else if (bestMove.type === 'move') {
+                    board[bestMove.to] = board[bestMove.from];
+                    board[bestMove.from] = null;
+                }
+
+                renderBoard();
+                updatePlayerInfo();
+                
+                if (!checkWin()) {
+                    switchPlayer();
+                }
+            } catch (error) {
+                console.error('AI 執行錯誤:', error);
+                updateMessage('AI 發生錯誤，請重新開始遊戲');
+                gameStarted = false;
+            }
+        }
+
+        function calculateRevealPriority(index, aiColor) {
+            // 遊戲初期翻開棋子的優先級（要遠低於吃子）
+            let priority = 15;
+            
+            // 如果周圍有敵方棋子，降低優先級（可能被吃）
+            const adjacentEnemies = countAdjacentEnemies(index, aiColor);
+            priority -= adjacentEnemies * 3;
+            
+            // 如果周圍有友方棋子，稍微提高優先級（可能得到保護）
+            const adjacentAllies = countAdjacentAllies(index, aiColor);
+            priority += adjacentAllies * 1;
+            
+            // 添加隨機性
+            priority += Math.random() * 3;
+            
+            return priority;
+        }
+
+        function countAdjacentEnemies(index, myColor) {
+            if (!myColor) return 0;
+            const enemyColor = myColor === 'red' ? 'black' : 'red';
+            let count = 0;
+            const adjacents = getAdjacentIndices(index);
+            
+            adjacents.forEach(i => {
+                if (board[i] && board[i].revealed && board[i].color === enemyColor) {
+                    count++;
+                }
+            });
+            
+            return count;
+        }
+
+        function countAdjacentAllies(index, myColor) {
+            if (!myColor) return 0;
+            let count = 0;
+            const adjacents = getAdjacentIndices(index);
+            
+            adjacents.forEach(i => {
+                if (board[i] && board[i].revealed && board[i].color === myColor) {
+                    count++;
+                }
+            });
+            
+            return count;
+        }
+
+        function getAdjacentIndices(index) {
+            const adjacents = [];
+            const row = Math.floor(index / 4);
+            const col = index % 4;
+            
+            // 上
+            if (row > 0) adjacents.push(index - 4);
+            // 下
+            if (row < 3) adjacents.push(index + 4);
+            // 左
+            if (col > 0) adjacents.push(index - 1);
+            // 右
+            if (col < 3) adjacents.push(index + 1);
+            
+            return adjacents;
+        }
+
+        function calculateMovePriority(from, to, aiColor) {
+            // 移動的基礎優先級要遠低於吃子
+            let priority = 10;
+            
+            const piece = board[from].piece;
+            const pieceValue = pieces[piece];
+            
+            // 高價值棋子傾向於移動到更安全的位置
+            const enemiesAtTarget = countAdjacentEnemies(to, aiColor);
+            const alliesAtTarget = countAdjacentAllies(to, aiColor);
+            
+            // 如果目標位置周圍有強大的敵人，降低優先級
+            priority -= enemiesAtTarget * (8 - pieceValue);
+            
+            // 如果目標位置周圍有友軍，提高優先級
+            priority += alliesAtTarget * 2;
+            
+            // 進攻性移動：靠近敵方棋子準備下回合吃子
+            const enemyNearby = hasEnemyNearby(to, aiColor);
+            if (enemyNearby && pieceValue >= 4) {
+                priority += 8; // 強棋靠近敵人準備進攻
+            }
+            
+            // 保護己方重要棋子
+            const importantAllyNearby = hasImportantAllyNearby(to, aiColor);
+            if (importantAllyNearby) {
+                priority += 5;
+            }
+            
+            // 將帥和重要棋子傾向於後撤或保守
+            if ((piece === '將' || piece === '帥') && enemiesAtTarget > 0) {
+                priority -= 15;
+            }
+            
+            // 如果有敵方棋子可能下回合能吃我，要移動到安全位置
+            const dangerAtCurrent = countAdjacentEnemies(from, aiColor);
+            if (dangerAtCurrent > enemiesAtTarget) {
+                priority += 6; // 逃離危險
+            }
+            
+            priority += Math.random() * 2;
+            
+            return priority;
+        }
+
+        function hasEnemyNearby(index, myColor) {
+            const enemyColor = myColor === 'red' ? 'black' : 'red';
+            const adjacents = getAdjacentIndices(index);
+            
+            return adjacents.some(i => 
+                board[i] && board[i].revealed && board[i].color === enemyColor
+            );
+        }
+
+        function hasImportantAllyNearby(index, myColor) {
+            const adjacents = getAdjacentIndices(index);
+            
+            return adjacents.some(i => {
+                if (!board[i] || !board[i].revealed || board[i].color !== myColor) {
+                    return false;
+                }
+                const piece = board[i].piece;
+                return piece === '將' || piece === '帥' || pieces[piece] >= 5;
+            });
+        }
+
+        function calculateEatPriority(from, to, aiColor) {
+            const fromPiece = board[from].piece;
+            const toPiece = board[to].piece;
+            const fromValue = pieces[fromPiece];
+            const toValue = pieces[toPiece];
+
+            // 基礎優先級設定很高，確保吃子優於其他行動
+            let priority = 100;
+
+            // === 目標價值 ===
+            // 吃掉的棋子價值越高，優先級越高
+            priority += toValue * 50;
+
+            // === 絕對優先：將帥 ===
+            if (toPiece === '將' || toPiece === '帥') {
+                return 10000; // 直接返回超高優先級，必吃
+            }
+
+            // === 兵吃將的特殊情況 ===
+            if ((fromPiece === '兵' || fromPiece === '卒') && (toPiece === '將' || toPiece === '帥')) {
+                return 10000;
+            }
+
+            // === 價值交換評估 ===
+            const valueDiff = toValue - fromValue;
+            
+            if (valueDiff > 0) {
+                // 用小吃大，大幅加分
+                priority += valueDiff * 80;
+            } else if (valueDiff === 0) {
+                // 等價交換，仍然有不錯的優先級
+                priority += 40;
+            } else {
+                // 用大吃小，減少優先級但仍然考慮
+                priority += valueDiff * 30; // 這會是負數，所以會降低
+            }
+
+            // === 戰術重要性 ===
+            // 消滅對手的進攻棋子（車、馬、砲）
+            if (toValue >= 4) {
+                priority += 60;
+            }
+
+            // 保護我方將帥：如果敵方棋子威脅將帥，必須優先吃掉
+            if (isThreateningMyGeneral(to, aiColor)) {
+                priority += 500;
+            }
+
+            // === 風險評估 ===
+            // 檢查吃子後會不會立即被反吃
+            const dangerAfterEat = countAdjacentEnemies(to, aiColor);
+            let canBeEaten = false; // 在外部定義，避免作用域問題
+            
+            if (dangerAfterEat > 0) {
+                canBeEaten = canAnyEnemyEatMe(to, fromPiece, aiColor);
+                if (canBeEaten) {
+                    // 會被反吃，但仍然可能值得（如果吃掉的更有價值）
+                    if (valueDiff > 1) {
+                        // 交換有利，即使被反吃也值得
+                        priority += 20;
+                    } else if (valueDiff === 0 || valueDiff === 1) {
+                        // 等價或小虧交換，稍微降低優先級
+                        priority -= 30;
+                    } else {
+                        // 虧本交換，顯著降低但不完全排除
+                        priority -= fromValue * 15;
+                    }
+                } else {
+                    // 不會被反吃，更安全的吃子
+                    priority += 40;
+                }
+            } else {
+                // 周圍沒有敵人，非常安全
+                priority += 50;
+            }
+
+            // === 局勢評估 ===
+            const { myCount, enemyCount } = countPieces(aiColor);
+            
+            // 優勢時更激進
+            if (myCount > enemyCount + 2) {
+                priority += 30;
+            }
+            
+            // 劣勢時也要積極吃子扳回局面
+            if (myCount < enemyCount - 1) {
+                priority += 40; // 背水一戰
+            }
+
+            // 敵方剩餘棋子少時，加強追殺
+            if (enemyCount <= 4) {
+                priority += 80;
+            }
+            
+            if (enemyCount <= 2) {
+                priority += 150; // 接近勝利，不放過任何吃子機會
+            }
+
+            // === 特殊策略 ===
+            // 砲的價值：砲可以遠程吃子，非常有價值
+            if (fromPiece === '砲' || fromPiece === '炮') {
+                priority += 20; // 鼓勵使用砲
+            }
+
+            // 保存高價值棋子，但不過分謹慎
+            if (fromValue >= 6 && toValue <= 2 && canBeEaten) {
+                priority -= 40; // 將帥士仕吃小兵且會被反吃，降低優先級
+            }
+
+            // 非常小的隨機因素，避免完全可預測
+            priority += Math.random() * 5;
+
+            return priority;
+        }
+
+        function isThreateningMyGeneral(enemyIndex, myColor) {
+            // 檢查敵方這個位置的棋子是否威脅到我方將帥
+            const adjacents = getAdjacentIndices(enemyIndex);
+            
+            return adjacents.some(i => {
+                if (!board[i] || !board[i].revealed || board[i].color !== myColor) {
+                    return false;
+                }
+                const piece = board[i].piece;
+                return piece === '將' || piece === '帥';
+            });
+        }
+
+        function canAnyEnemyEatMe(myPosition, myPiece, myColor) {
+            if (!myColor) return false;
+            
+            const enemyColor = myColor === 'red' ? 'black' : 'red';
+            
+            // 檢查所有敵方棋子是否能吃掉我
+            for (let i = 0; i < 16; i++) {
+                if (board[i] && board[i].revealed && board[i].color === enemyColor) {
+                    // 暫時放置我的棋子到目標位置進行測試
+                    const originalPiece = board[myPosition];
+                    board[myPosition] = { piece: myPiece, color: myColor, revealed: true };
+                    
+                    const canEatResult = canEat(i, myPosition);
+                    
+                    // 恢復原狀
+                    board[myPosition] = originalPiece;
+                    
+                    if (canEatResult) {
+                        return true;
+                    }
+                }
+            }
+            
+            return false;
+        }
+
+        function countPieces(color) {
+            let myCount = 0;
+            let enemyCount = 0;
+            const enemyColor = color === 'red' ? 'black' : 'red';
+            
+            board.forEach(cell => {
+                if (cell && cell.revealed) {
+                    if (cell.color === color) {
+                        myCount++;
+                    } else if (cell.color === enemyColor) {
+                        enemyCount++;
+                    }
+                }
+            });
+            
+            return { myCount, enemyCount };
+        }
+
+        function checkWin() {
+            let redCount = 0;
+            let blackCount = 0;
+
+            board.forEach(cell => {
+                if (cell) {
+                    if (cell.color === 'red') redCount++;
+                    else blackCount++;
+                }
+            });
+
+            if (redCount === 0) {
+                updateMessage('🎉 黑方獲勝！');
+                gameStarted = false;
+                return true;
+            } else if (blackCount === 0) {
+                updateMessage('🎉 紅方獲勝！');
+                gameStarted = false;
+                return true;
+            }
+            return false;
+        }
+
+        renderBoard();
+    </script>
+</body>
+</html>
